@@ -1,0 +1,10 @@
+let volume = 100
+let time = 0
+
+while volume > 50 {
+    volume = volume - 10
+    time = time + 1
+}
+
+return time
+
