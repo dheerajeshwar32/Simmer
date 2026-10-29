@@ -255,7 +255,12 @@ def index():
 def compile_code():
     data = request.get_json() or {}
     source_code = data.get('code', '')
-    opt_level = int(data.get('opt_level', 3))
+    raw_opt = str(data.get('opt_level', 3)).upper().replace('-O', '').replace('O', '').strip()
+    try:
+        opt_level = int(raw_opt)
+    except (ValueError, TypeError):
+        opt_level = 3
+    opt_level = max(0, min(3, opt_level))
     base_name = data.get('name', 'simmer_program')
 
     t0 = time.time()
