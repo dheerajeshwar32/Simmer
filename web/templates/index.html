@@ -93,25 +93,66 @@
     <!-- ============================================================ -->
     <header class="h-16 border-b border-obsidian-800 bg-obsidian-900/90 backdrop-blur-md px-6 flex items-center justify-between z-50">
         
-        <!-- Left: Branding -->
-        <div class="flex items-center space-x-3 shrink-0">
-            <span class="text-2xl">🍲</span>
+        <!-- Left: Billion-Dollar Glowing Brandmark -->
+        <div class="flex items-center space-x-3.5 shrink-0 group cursor-pointer" onclick="loadExampleByName('05_fibonacci.sim')">
+            <div class="relative flex items-center justify-center">
+                <div class="absolute -inset-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-xl blur-sm opacity-50 group-hover:opacity-100 transition duration-500"></div>
+                <div class="relative w-10 h-10 rounded-xl bg-gradient-to-br from-obsidian-850 to-obsidian-950 border border-emerald-500/40 flex items-center justify-center shadow-lg">
+                    <!-- Geometric Glowing S Logo -->
+                    <svg class="w-5 h-5 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M22.5 7.5C20.5 5.5 17 5 13.5 5.5C9 6.2 6.5 9 6.5 12.5C6.5 19 25.5 15 25.5 21.5C25.5 25 22.5 28 17.5 28.5C12.5 29 8.5 27 7 24.5" stroke="url(#simmerNeonGrad)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="22.5" cy="7.5" r="1.8" fill="#10B981" />
+                        <circle cx="7" cy="24.5" r="1.8" fill="#06B6D4" />
+                        <defs>
+                            <linearGradient id="simmerNeonGrad" x1="6.5" y1="5" x2="25.5" y2="28.5" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#10B981"/>
+                                <stop offset="0.5" stop-color="#14B8A6"/>
+                                <stop offset="1" stop-color="#06B6D4"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+            </div>
             <div class="flex items-center space-x-2.5">
-                <span class="font-bold text-lg tracking-tight text-white">Simmer</span>
-                <span class="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono font-medium">Studio v1.2</span>
-                <span class="text-xs text-slate-500 hidden xl:inline">| LLVM Optimization Workbench</span>
+                <span class="font-black text-xl tracking-wider bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent font-sans">SIMMER</span>
+                <span class="text-[9px] tracking-widest uppercase font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">STUDIO v1.2</span>
+                <span class="text-xs text-slate-500 hidden xl:inline font-mono">| LLVM Engine</span>
             </div>
         </div>
 
-        <!-- Center: Benchmark Selector Dropdown -->
-        <div class="flex items-center space-x-3 mx-4 max-w-md w-full">
-            <div class="relative w-full">
+        <!-- Center: Script Selector + Custom Script Controls -->
+        <div class="flex items-center space-x-2 mx-4 max-w-xl w-full">
+            <!-- Dropdown -->
+            <div class="relative flex-1">
                 <i class="fa-solid fa-code absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-500 pointer-events-none"></i>
-                <select id="exampleSelector" class="w-full bg-obsidian-850 hover:bg-obsidian-800 text-xs border border-obsidian-700/80 rounded-lg pl-9 pr-8 py-2 text-slate-200 focus:outline-none focus:border-emerald-500 transition cursor-pointer appearance-none truncate">
-                    <option value="" disabled selected>Select Benchmark Program...</option>
+                <select id="exampleSelector" class="w-full bg-obsidian-850 hover:bg-obsidian-800 text-xs border border-obsidian-700/80 rounded-lg pl-9 pr-8 py-2 text-slate-200 focus:outline-none focus:border-emerald-500 transition cursor-pointer appearance-none truncate font-mono">
+                    <option value="" disabled selected>Loading scripts...</option>
                 </select>
                 <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-500 pointer-events-none"></i>
             </div>
+
+            <!-- New Script Button -->
+            <button onclick="openNewScriptModal()" title="Create New Script" class="px-3 py-2 bg-obsidian-850 hover:bg-obsidian-800 border border-obsidian-700/80 text-xs rounded-lg text-emerald-400 hover:text-emerald-300 flex items-center space-x-1.5 transition shrink-0 font-medium shadow-sm">
+                <i class="fa-solid fa-plus text-xs"></i>
+                <span class="hidden sm:inline">New</span>
+            </button>
+
+            <!-- Save Custom Script Button -->
+            <button onclick="saveCurrentScript()" id="saveScriptBtn" title="Save Script to My Custom Library (Ctrl+S)" class="px-3 py-2 bg-obsidian-850 hover:bg-obsidian-800 border border-obsidian-700/80 text-xs rounded-lg text-slate-300 hover:text-white flex items-center space-x-1.5 transition shrink-0 font-medium shadow-sm">
+                <i class="fa-regular fa-floppy-disk text-xs"></i>
+                <span class="hidden sm:inline">Save</span>
+            </button>
+
+            <!-- Import .sim file button -->
+            <button onclick="document.getElementById('fileImporter').click()" title="Open .sim file from computer" class="px-2.5 py-2 bg-obsidian-850 hover:bg-obsidian-800 border border-obsidian-700/80 text-xs rounded-lg text-slate-400 hover:text-slate-200 transition shrink-0">
+                <i class="fa-solid fa-folder-open"></i>
+            </button>
+            <input type="file" id="fileImporter" accept=".sim,.txt" onchange="handleFileImport(event)" class="hidden">
+
+            <!-- Export .sim file button -->
+            <button onclick="exportCurrentSimFile()" title="Download current .sim file" class="px-2.5 py-2 bg-obsidian-850 hover:bg-obsidian-800 border border-obsidian-700/80 text-xs rounded-lg text-slate-400 hover:text-slate-200 transition shrink-0">
+                <i class="fa-solid fa-file-arrow-down"></i>
+            </button>
         </div>
 
         <!-- Right: Actions & Compilation Controls -->
@@ -154,16 +195,26 @@
             <!-- Editor Topbar -->
             <div class="px-5 py-3 bg-obsidian-900 border-b border-obsidian-800 flex items-center justify-between text-xs">
                 <div class="flex items-center space-x-2.5">
-                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                    <span id="currentFileName" class="font-mono text-slate-200 font-medium text-xs">05_fibonacci.sim</span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <div class="flex items-center space-x-1.5 cursor-pointer group" onclick="renameCurrentScript()" title="Click to rename script">
+                        <span id="currentFileName" class="font-mono text-slate-200 font-semibold text-xs group-hover:text-emerald-400 transition">05_fibonacci.sim</span>
+                        <i class="fa-solid fa-pen text-[9px] text-slate-500 group-hover:text-emerald-400 transition"></i>
+                    </div>
+                    <span id="customScriptBadge" class="hidden text-[10px] px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 font-mono">Custom</span>
                     <span id="codeLengthBadge" class="text-slate-500 font-mono text-[11px]">(16 lines)</span>
                 </div>
-                <div class="flex items-center space-x-3 text-slate-400 text-xs">
-                    <button onclick="formatCodeSnippet()" title="Reset snippet" class="hover:text-white transition">
-                        <i class="fa-solid fa-rotate-right"></i>
+                <div class="flex items-center space-x-2 text-slate-400 text-xs">
+                    <button id="deleteScriptBtn" onclick="deleteCurrentScript()" title="Delete this custom script" class="hidden hover:text-rose-400 p-1.5 rounded hover:bg-obsidian-800 transition">
+                        <i class="fa-regular fa-trash-can text-xs"></i>
                     </button>
-                    <button onclick="copySourceCode()" title="Copy Code" class="hover:text-white transition">
-                        <i class="fa-regular fa-copy"></i>
+                    <button onclick="saveCurrentScript()" title="Save (Ctrl+S)" class="hover:text-emerald-400 p-1.5 rounded hover:bg-obsidian-800 transition">
+                        <i class="fa-regular fa-floppy-disk text-xs"></i>
+                    </button>
+                    <button onclick="formatCodeSnippet()" title="Reset snippet" class="hover:text-white p-1.5 rounded hover:bg-obsidian-800 transition">
+                        <i class="fa-solid fa-rotate-right text-xs"></i>
+                    </button>
+                    <button onclick="copySourceCode()" title="Copy Code" class="hover:text-white p-1.5 rounded hover:bg-obsidian-800 transition">
+                        <i class="fa-regular fa-copy text-xs"></i>
                     </button>
                 </div>
             </div>
@@ -561,30 +612,409 @@
     </main>
 
     <!-- ============================================================ -->
+    <!-- NEW SCRIPT MODAL (Templates & Custom Script Creation)        -->
+    <!-- ============================================================ -->
+    <div id="newScriptModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+        <div class="bg-obsidian-900 border border-obsidian-700/80 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5">
+            <div class="flex items-center justify-between border-b border-obsidian-800 pb-3.5">
+                <div class="flex items-center space-x-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                        <i class="fa-solid fa-file-circle-plus text-emerald-400 text-sm"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-white tracking-wide">Create New Simmer Script</h3>
+                        <p class="text-[11px] text-slate-400">Write custom algorithms, loops, conditions, and tests</p>
+                    </div>
+                </div>
+                <button onclick="closeNewScriptModal()" class="text-slate-400 hover:text-white transition p-1">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+            
+            <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1.5 font-mono">Script Name</label>
+                <div class="relative">
+                    <input type="text" id="newScriptFilename" value="my_algorithm.sim" class="w-full bg-obsidian-950 border border-obsidian-700 rounded-lg pl-3.5 pr-14 py-2 text-xs font-mono text-slate-100 focus:outline-none focus:border-emerald-500">
+                    <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-[11px] font-mono text-slate-500">.sim</span>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-2">Choose Starter Template</label>
+                <div class="grid grid-cols-2 gap-2.5 text-xs" id="templatePickerGrid">
+                    <button type="button" onclick="selectTemplate('blank')" id="tmpl-blank" class="tmpl-card p-3 bg-obsidian-950 border-2 border-emerald-500 rounded-xl text-left transition space-y-1">
+                        <span class="font-bold text-slate-200 block text-xs flex items-center justify-between">
+                            <span>Blank Canvas</span>
+                            <i class="fa-solid fa-circle-check text-emerald-400 text-xs"></i>
+                        </span>
+                        <span class="text-[10px] text-slate-500 block leading-tight">Minimal script with variable declaration and return</span>
+                    </button>
+                    <button type="button" onclick="selectTemplate('while_loop')" id="tmpl-while_loop" class="tmpl-card p-3 bg-obsidian-950 border-2 border-obsidian-800 hover:border-obsidian-700 rounded-xl text-left transition space-y-1">
+                        <span class="font-bold text-slate-200 block text-xs flex items-center justify-between">
+                            <span>While Loop</span>
+                        </span>
+                        <span class="text-[10px] text-slate-500 block leading-tight">Iteration counter with condition test</span>
+                    </button>
+                    <button type="button" onclick="selectTemplate('for_loop')" id="tmpl-for_loop" class="tmpl-card p-3 bg-obsidian-950 border-2 border-obsidian-800 hover:border-obsidian-700 rounded-xl text-left transition space-y-1">
+                        <span class="font-bold text-slate-200 block text-xs flex items-center justify-between">
+                            <span>For Loop</span>
+                        </span>
+                        <span class="text-[10px] text-slate-500 block leading-tight">Bounded range accumulation (from start to end)</span>
+                    </button>
+                    <button type="button" onclick="selectTemplate('if_else')" id="tmpl-if_else" class="tmpl-card p-3 bg-obsidian-950 border-2 border-obsidian-800 hover:border-obsidian-700 rounded-xl text-left transition space-y-1">
+                        <span class="font-bold text-slate-200 block text-xs flex items-center justify-between">
+                            <span>If-Else Branch</span>
+                        </span>
+                        <span class="text-[10px] text-slate-500 block leading-tight">Multi-path relational decision tree</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end space-x-2.5 pt-3 border-t border-obsidian-800">
+                <button onclick="closeNewScriptModal()" class="px-4 py-2 text-xs font-medium text-slate-400 hover:text-white rounded-lg transition">Cancel</button>
+                <button onclick="confirmCreateNewScript()" class="px-5 py-2 text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-obsidian-950 rounded-lg shadow-lg transition">Create & Open</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
     <!-- APPLICATION JAVASCRIPT                                       -->
     <!-- ============================================================ -->
     <script>
         let currentOptLevel = 3;
         let allExamples = [];
+        let allCustomScripts = [];
+        let currentScriptObj = null;
+        let selectedTemplateKey = 'blank';
         let isAstRawView = false;
         let lastTokens = [];
+
+        const TEMPLATES = {
+            blank: `// Custom Simmer Script\nlet x = 10\nlet y = 20\nlet sum = x + y\nreturn sum\n`,
+            while_loop: `// Countdown Loop Algorithm\nlet n = 50\nlet count = 0\n\nwhile n > 0 {\n    n = n - 5\n    count = count + 1\n}\n\nreturn count\n`,
+            for_loop: `// Bounded For Loop\nlet sum = 0\nlet i = 0\n\nfor i = 1 to 21 {\n    sum = sum + i\n}\n\nreturn sum\n`,
+            if_else: `// Conditional Decision\nlet score = 88\nlet result = 0\n\nif score >= 80 {\n    result = 1\n} else {\n    result = 0\n}\n\nreturn result\n`
+        };
 
         const codeEditor = document.getElementById('codeEditor');
         const lineNumbers = document.getElementById('lineNumbers');
         const exampleSelector = document.getElementById('exampleSelector');
         const currentFileName = document.getElementById('currentFileName');
+        const customScriptBadge = document.getElementById('customScriptBadge');
+        const deleteScriptBtn = document.getElementById('deleteScriptBtn');
         const codeLengthBadge = document.getElementById('codeLengthBadge');
         const errorBanner = document.getElementById('errorBanner');
         const errorStageBadge = document.getElementById('errorStageBadge');
         const errorMessage = document.getElementById('errorMessage');
 
         window.addEventListener('DOMContentLoaded', async () => {
+            loadCustomScriptsFromStorage();
             await loadExamplesList();
             setupEditorEvents();
             if (codeEditor.value.trim().length > 0) {
                 compileCurrentCode();
             }
         });
+
+        // Local Storage for Custom User Scripts
+        function loadCustomScriptsFromStorage() {
+            try {
+                const stored = localStorage.getItem('simmer_custom_scripts');
+                if (stored) {
+                    allCustomScripts = JSON.parse(stored);
+                } else {
+                    allCustomScripts = [];
+                }
+            } catch (err) {
+                console.error("Failed to read custom scripts:", err);
+                allCustomScripts = [];
+            }
+        }
+
+        function saveCustomScriptsToStorage() {
+            try {
+                localStorage.setItem('simmer_custom_scripts', JSON.stringify(allCustomScripts));
+            } catch (err) {
+                console.error("Failed to save custom scripts:", err);
+            }
+        }
+
+        function renderScriptSelector(selectedFilename = null) {
+            exampleSelector.innerHTML = '';
+
+            // Group 1: Custom Scripts
+            if (allCustomScripts.length > 0) {
+                const customGroup = document.createElement('optgroup');
+                customGroup.label = '✨ My Custom Scripts';
+                allCustomScripts.forEach(script => {
+                    const opt = document.createElement('option');
+                    opt.value = 'custom:' + script.id;
+                    opt.textContent = `★ ${script.filename}`;
+                    customGroup.appendChild(opt);
+                });
+                exampleSelector.appendChild(customGroup);
+            }
+
+            // Group 2: Built-in Benchmark Scripts
+            const benchGroup = document.createElement('optgroup');
+            benchGroup.label = '📚 Standard Benchmarks (13 Programs)';
+            allExamples.forEach(ex => {
+                const opt = document.createElement('option');
+                opt.value = 'bench:' + ex.filename;
+                opt.textContent = `${ex.filename} — ${ex.title}`;
+                benchGroup.appendChild(opt);
+            });
+            exampleSelector.appendChild(benchGroup);
+
+            // Select active
+            if (selectedFilename) {
+                for (let i = 0; i < exampleSelector.options.length; i++) {
+                    const opt = exampleSelector.options[i];
+                    if (opt.value.endsWith(selectedFilename) || opt.textContent.includes(selectedFilename)) {
+                        exampleSelector.selectedIndex = i;
+                        break;
+                    }
+                }
+            }
+        }
+
+        async function loadExamplesList() {
+            try {
+                const res = await fetch('/api/examples');
+                allExamples = await res.json();
+                renderScriptSelector();
+
+                // If user had custom scripts, load the latest custom script, else 05_fibonacci
+                if (allCustomScripts.length > 0) {
+                    loadCustomScript(allCustomScripts[0]);
+                } else {
+                    const defaultEx = allExamples.find(e => e.filename.includes('05_fibonacci')) || allExamples[0];
+                    if (defaultEx) {
+                        loadBenchmark(defaultEx);
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to fetch examples:", err);
+            }
+        }
+
+        exampleSelector.addEventListener('change', (e) => {
+            const val = e.target.value;
+            if (val.startsWith('custom:')) {
+                const id = val.replace('custom:', '');
+                const script = allCustomScripts.find(s => s.id === id);
+                if (script) loadCustomScript(script);
+            } else if (val.startsWith('bench:')) {
+                const fn = val.replace('bench:', '');
+                const ex = allExamples.find(e => e.filename === fn);
+                if (ex) loadBenchmark(ex);
+            }
+        });
+
+        function loadBenchmark(ex) {
+            currentScriptObj = { ...ex, isCustom: false };
+            codeEditor.value = ex.code;
+            currentFileName.textContent = ex.filename;
+            customScriptBadge.classList.add('hidden');
+            deleteScriptBtn.classList.add('hidden');
+            updateLineNumbers();
+            renderScriptSelector(ex.filename);
+            compileCurrentCode();
+        }
+
+        function loadCustomScript(script) {
+            currentScriptObj = { ...script, isCustom: true };
+            codeEditor.value = script.code;
+            currentFileName.textContent = script.filename;
+            customScriptBadge.classList.remove('hidden');
+            deleteScriptBtn.classList.remove('hidden');
+            updateLineNumbers();
+            renderScriptSelector(script.id);
+            compileCurrentCode();
+        }
+
+        function loadExampleByName(filename) {
+            const ex = allExamples.find(item => item.filename === filename);
+            if (ex) {
+                loadBenchmark(ex);
+            }
+        }
+
+        // New Script Modal & Templates
+        function openNewScriptModal() {
+            document.getElementById('newScriptFilename').value = `custom_algo_${allCustomScripts.length + 1}`;
+            selectTemplate('blank');
+            document.getElementById('newScriptModal').classList.remove('hidden');
+        }
+
+        function closeNewScriptModal() {
+            document.getElementById('newScriptModal').classList.add('hidden');
+        }
+
+        function selectTemplate(key) {
+            selectedTemplateKey = key;
+            document.querySelectorAll('.tmpl-card').forEach(card => {
+                card.className = "tmpl-card p-3 bg-obsidian-950 border-2 border-obsidian-800 hover:border-obsidian-700 rounded-xl text-left transition space-y-1";
+            });
+            const activeCard = document.getElementById(`tmpl-${key}`);
+            if (activeCard) {
+                activeCard.className = "tmpl-card p-3 bg-obsidian-950 border-2 border-emerald-500 rounded-xl text-left transition space-y-1";
+            }
+        }
+
+        function confirmCreateNewScript() {
+            let name = document.getElementById('newScriptFilename').value.trim();
+            if (!name) name = `custom_script_${Date.now()}`;
+            if (!name.endsWith('.sim')) name += '.sim';
+
+            const templateCode = TEMPLATES[selectedTemplateKey] || TEMPLATES.blank;
+            const newScript = {
+                id: 'cust_' + Date.now(),
+                filename: name,
+                title: 'User Script',
+                code: templateCode,
+                isCustom: true
+            };
+
+            allCustomScripts.unshift(newScript);
+            saveCustomScriptsToStorage();
+            closeNewScriptModal();
+            loadCustomScript(newScript);
+        }
+
+        // Save Script (Ctrl+S or Save Button)
+        function saveCurrentScript() {
+            const code = codeEditor.value;
+            const filename = currentFileName.textContent;
+
+            if (currentScriptObj && currentScriptObj.isCustom) {
+                currentScriptObj.code = code;
+                const idx = allCustomScripts.findIndex(s => s.id === currentScriptObj.id);
+                if (idx !== -1) {
+                    allCustomScripts[idx].code = code;
+                }
+                saveCustomScriptsToStorage();
+                showSaveSuccessBadge();
+            } else {
+                // Save benchmark copy as custom script
+                const newName = prompt("Save as Custom Script name:", "my_" + filename);
+                if (!newName) return;
+                const cleanName = newName.endsWith('.sim') ? newName : newName + '.sim';
+                const customScript = {
+                    id: 'cust_' + Date.now(),
+                    filename: cleanName,
+                    title: 'Custom ' + cleanName,
+                    code: code,
+                    isCustom: true
+                };
+                allCustomScripts.unshift(customScript);
+                saveCustomScriptsToStorage();
+                loadCustomScript(customScript);
+                showSaveSuccessBadge();
+            }
+        }
+
+        function showSaveSuccessBadge() {
+            const saveBtn = document.getElementById('saveScriptBtn');
+            const originalHtml = saveBtn.innerHTML;
+            saveBtn.innerHTML = '<i class="fa-solid fa-check text-emerald-400"></i><span class="text-emerald-400 font-bold ml-1">Saved</span>';
+            setTimeout(() => {
+                saveBtn.innerHTML = originalHtml;
+            }, 1500);
+        }
+
+        function deleteCurrentScript() {
+            if (!currentScriptObj || !currentScriptObj.isCustom) return;
+            if (!confirm(`Delete custom script "${currentScriptObj.filename}"?`)) return;
+
+            allCustomScripts = allCustomScripts.filter(s => s.id !== currentScriptObj.id);
+            saveCustomScriptsToStorage();
+
+            if (allCustomScripts.length > 0) {
+                loadCustomScript(allCustomScripts[0]);
+            } else {
+                loadExampleByName('05_fibonacci.sim');
+            }
+        }
+
+        function renameCurrentScript() {
+            const current = currentFileName.textContent;
+            const newName = prompt("Rename script to:", current);
+            if (!newName || newName === current) return;
+            const cleanName = newName.endsWith('.sim') ? newName : newName + '.sim';
+
+            currentFileName.textContent = cleanName;
+
+            if (currentScriptObj && currentScriptObj.isCustom) {
+                currentScriptObj.filename = cleanName;
+                const idx = allCustomScripts.findIndex(s => s.id === currentScriptObj.id);
+                if (idx !== -1) {
+                    allCustomScripts[idx].filename = cleanName;
+                }
+                saveCustomScriptsToStorage();
+                renderScriptSelector(currentScriptObj.id);
+            }
+        }
+
+        function handleFileImport(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const content = event.target.result;
+                const newScript = {
+                    id: 'cust_' + Date.now(),
+                    filename: file.name.endsWith('.sim') ? file.name : file.name + '.sim',
+                    title: 'Imported File',
+                    code: content,
+                    isCustom: true
+                };
+                allCustomScripts.unshift(newScript);
+                saveCustomScriptsToStorage();
+                loadCustomScript(newScript);
+            };
+            reader.readAsText(file);
+            e.target.value = ''; // Reset input
+        }
+
+        function exportCurrentSimFile() {
+            const code = codeEditor.value;
+            const filename = currentFileName.textContent || 'script.sim';
+            const blob = new Blob([code], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function setupEditorEvents() {
+            codeEditor.addEventListener('input', updateLineNumbers);
+            codeEditor.addEventListener('scroll', () => {
+                lineNumbers.scrollTop = codeEditor.scrollTop;
+            });
+
+            codeEditor.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    compileCurrentCode();
+                }
+                if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
+                    e.preventDefault();
+                    saveCurrentScript();
+                }
+                if (e.key === 'Tab') {
+                    e.preventDefault();
+                    const start = codeEditor.selectionStart;
+                    const end = codeEditor.selectionEnd;
+                    codeEditor.value = codeEditor.value.substring(0, start) + '    ' + codeEditor.value.substring(end);
+                    codeEditor.selectionStart = codeEditor.selectionEnd = start + 4;
+                    updateLineNumbers();
+                }
+            });
+        }
 
         function switchTab(tabId) {
             document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
