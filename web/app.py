@@ -62,6 +62,11 @@ def add_no_cache_headers(response):
     response.headers["Expires"] = "0"
     return response
 
+@app.route('/favicon.ico')
+def favicon():
+    fav_path = os.path.join(os.path.dirname(__file__), "static", "favicon.svg")
+    return send_file(fav_path, mimetype='image/svg+xml')
+
 # Cache for latest compiled artifacts
 LAST_ARTIFACTS = {
     "asm_code": "",
