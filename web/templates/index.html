@@ -3,14 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simmer Studio — LLVM Compiler Workbench</title>
-    <!-- Tailwind CSS -->
+    <title>Simmer Studio v1.2 — LLVM Compiler Workbench</title>
+    
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts -->
+    
+    <!-- Fonts: SF Pro Display / Inter & SF Mono / JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- FontAwesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Pro/Free Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <script>
@@ -19,375 +22,424 @@
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
-                        mono: ['Fira Code', 'monospace'],
+                        sans: ['-apple-system', 'BlinkMacSystemFont', 'SF Pro Display', 'SF Pro Text', 'Inter', 'sans-serif'],
+                        mono: ['SF Mono', 'JetBrains Mono', 'Fira Code', 'monospace'],
                     },
                     colors: {
-                        obsidian: {
-                            950: '#06080e',
-                            900: '#0a0e17',
-                            850: '#101623',
-                            800: '#161f30',
-                            700: '#1f2b42',
-                            600: '#2c3c5c',
-                        }
+                        canvas: '#08080A',
+                        toolbar: '#0D0D10',
+                        panel: '#121215',
+                        editor: '#0B0B0E',
+                        appleMint: '#30D158',
+                        appleBlue: '#0A84FF',
+                        appleAmber: '#FF9F0A',
+                        appleRed: '#FF453A',
                     }
                 }
             }
         }
     </script>
+    
     <style>
-        body {
-            background-color: #06080e;
-            color: #e2e8f0;
-            overflow-x: hidden;
+        :root {
+            --apple-bezier: cubic-bezier(0.22, 1, 0.36, 1);
         }
-        /* Custom scrollbar */
+        
+        body {
+            background-color: #08080A;
+            color: #F5F5F7;
+            overflow-x: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Apple Specular Luminance Border */
+        .apple-border {
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+        }
+
+        .apple-glass {
+            background: rgba(18, 18, 21, 0.85);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+        }
+
+        /* Authentic macOS Subtle Scrollbar */
         ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
+            width: 5px;
+            height: 5px;
         }
         ::-webkit-scrollbar-track {
-            background: #0a0e17;
+            background: transparent;
         }
         ::-webkit-scrollbar-thumb {
-            background: #1f2b42;
-            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 4px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #2c3c5c;
+            background: rgba(255, 255, 255, 0.22);
         }
-        .code-font {
-            font-family: 'Fira Code', monospace;
+
+        /* Tabular nums for telemetry */
+        .tabular-numbers {
+            font-variant-numeric: tabular-nums;
         }
-        /* AST Tree Lines */
+
+        /* AST Visual Tree Branch Styling */
         .ast-branch {
             position: relative;
-            padding-left: 1.5rem;
+            padding-left: 1.25rem;
             margin-left: 0.75rem;
-            border-left: 1px solid #1f2b42;
+            border-left: 1px solid rgba(255, 255, 255, 0.08);
         }
         .ast-branch::before {
             content: '';
             position: absolute;
             left: 0;
-            top: 1rem;
-            width: 1rem;
+            top: 0.875rem;
+            width: 0.875rem;
             height: 1px;
-            background: #1f2b42;
+            background: rgba(255, 255, 255, 0.08);
         }
         .ast-branch:last-child {
             border-left-color: transparent;
         }
         .ast-branch:last-child::before {
-            border-left: 1px solid #1f2b42;
-            height: 1rem;
+            border-left: 1px solid rgba(255, 255, 255, 0.08);
+            height: 0.875rem;
             top: 0;
+        }
+
+        /* Smooth Apple ease transition */
+        .apple-transition {
+            transition: all 150ms cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        /* Hide scrollbars for pill strips */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col font-sans antialiased text-slate-200 bg-obsidian-950">
+<body class="min-h-screen flex flex-col font-sans antialiased text-[#F5F5F7] bg-[#08080A] selection:bg-white/20">
 
     <!-- ============================================================ -->
-    <!-- TOP NAVIGATION BAR (Spacious, Uncluttered, Professional)       -->
+    <!-- UNIFIED macOS TITLEBAR & TOOLBAR (h-14 Apple Pro Nav)        -->
     <!-- ============================================================ -->
-    <header class="h-16 border-b border-obsidian-800 bg-obsidian-900/90 backdrop-blur-md px-6 flex items-center justify-between z-50">
+    <header class="h-14 border-b border-white/[0.06] bg-[#0D0D10]/90 backdrop-blur-xl px-4 flex items-center justify-between z-50 shrink-0">
         
-        <!-- Left: Billion-Dollar Glowing Brandmark -->
-        <div class="flex items-center space-x-3.5 shrink-0 group cursor-pointer" onclick="loadExampleByName('05_fibonacci.sim')">
-            <div class="relative flex items-center justify-center">
-                <div class="absolute -inset-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-xl blur-sm opacity-50 group-hover:opacity-100 transition duration-500"></div>
-                <div class="relative w-10 h-10 rounded-xl bg-gradient-to-br from-obsidian-850 to-obsidian-950 border border-emerald-500/40 flex items-center justify-center shadow-lg">
-                    <!-- Geometric Glowing S Logo -->
-                    <svg class="w-5 h-5 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M22.5 7.5C20.5 5.5 17 5 13.5 5.5C9 6.2 6.5 9 6.5 12.5C6.5 19 25.5 15 25.5 21.5C25.5 25 22.5 28 17.5 28.5C12.5 29 8.5 27 7 24.5" stroke="url(#simmerNeonGrad)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <circle cx="22.5" cy="7.5" r="1.8" fill="#10B981" />
-                        <circle cx="7" cy="24.5" r="1.8" fill="#06B6D4" />
-                        <defs>
-                            <linearGradient id="simmerNeonGrad" x1="6.5" y1="5" x2="25.5" y2="28.5" gradientUnits="userSpaceOnUse">
-                                <stop stop-color="#10B981"/>
-                                <stop offset="0.5" stop-color="#14B8A6"/>
-                                <stop offset="1" stop-color="#06B6D4"/>
-                            </linearGradient>
-                        </defs>
-                    </svg>
+        <!-- Left: Refined Metallic Simmer Studio Brandmark -->
+        <div class="flex items-center space-x-3 shrink-0 group cursor-pointer" onclick="loadExampleByName('05_fibonacci.sim')">
+            <!-- Anodized Metallic Squircle Emblem -->
+            <div class="relative w-8 h-8 rounded-lg bg-gradient-to-b from-zinc-700 via-zinc-800 to-zinc-900 border border-white/15 shadow-inner flex items-center justify-center transition-transform group-hover:scale-[1.03]">
+                <!-- Precision Laser S Glyph -->
+                <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M17 6.5C15.5 5 13 4.5 10.5 5C7.2 5.5 5.5 7.5 5.5 10C5.5 14.5 18.5 12 18.5 16.5C18.5 19 16.5 21 13 21.5C9.5 22 6.5 20.5 5.5 18.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span class="font-semibold text-sm tracking-tight text-[#F5F5F7]">SIMMER</span>
+                <span class="text-[10px] tracking-wide font-mono px-2 py-0.5 rounded-md bg-white/[0.06] text-zinc-300 border border-white/[0.08]">Studio 1.2</span>
+                <span class="text-[11px] text-[#6E6E73] font-mono hidden xl:inline">LLVM Engine</span>
+            </div>
+        </div>
+
+        <!-- Center: File Selector & Actions (Unified macOS Control Group) -->
+        <div class="flex items-center space-x-1 mx-3 max-w-xl w-full">
+            <div class="bg-white/[0.04] rounded-lg p-1 border border-white/[0.06] flex items-center space-x-1 w-full">
+                <!-- Dropdown -->
+                <div class="relative flex-1 min-w-0">
+                    <i class="fa-solid fa-code absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] text-zinc-500 pointer-events-none"></i>
+                    <select id="exampleSelector" class="w-full bg-transparent hover:bg-white/[0.04] text-xs text-[#F5F5F7] pl-7 pr-6 py-1 rounded-md border-0 focus:outline-none cursor-pointer appearance-none truncate font-mono apple-transition">
+                        <option value="" disabled selected>Loading scripts...</option>
+                    </select>
+                    <i class="fa-solid fa-chevron-down absolute right-2.5 top-1/2 -translate-y-1/2 text-[9px] text-zinc-500 pointer-events-none"></i>
                 </div>
-            </div>
-            <div class="flex items-center space-x-2.5">
-                <span class="font-black text-xl tracking-wider bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent font-sans">SIMMER</span>
-                <span class="text-[9px] tracking-widest uppercase font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">STUDIO v1.2</span>
-                <span class="text-xs text-slate-500 hidden xl:inline font-mono">| LLVM Engine</span>
+
+                <!-- Divider -->
+                <div class="h-4 w-px bg-white/[0.08] shrink-0"></div>
+
+                <!-- New Script Button -->
+                <button onclick="openNewScriptModal()" title="Create New Script" class="px-2 py-1 text-xs text-zinc-300 hover:text-white hover:bg-white/[0.08] rounded-md flex items-center space-x-1 apple-transition shrink-0 font-medium">
+                    <i class="fa-solid fa-plus text-[10px]"></i>
+                    <span class="hidden sm:inline">New</span>
+                </button>
+
+                <!-- Save Custom Script Button -->
+                <button onclick="saveCurrentScript()" id="saveScriptBtn" title="Save Script to My Custom Library (Ctrl+S)" class="px-2 py-1 text-xs text-zinc-300 hover:text-white hover:bg-white/[0.08] rounded-md flex items-center space-x-1 apple-transition shrink-0 font-medium">
+                    <i class="fa-regular fa-floppy-disk text-[10px]"></i>
+                    <span class="hidden sm:inline">Save</span>
+                </button>
+
+                <!-- Divider -->
+                <div class="h-4 w-px bg-white/[0.08] shrink-0"></div>
+
+                <!-- Import .sim file button -->
+                <button onclick="document.getElementById('fileImporter').click()" title="Open .sim file from computer" class="p-1.5 text-xs text-zinc-400 hover:text-white hover:bg-white/[0.08] rounded-md apple-transition shrink-0">
+                    <i class="fa-solid fa-folder-open text-[11px]"></i>
+                </button>
+                <input type="file" id="fileImporter" accept=".sim,.txt" onchange="handleFileImport(event)" class="hidden">
+
+                <!-- Export .sim file button -->
+                <button onclick="exportCurrentSimFile()" title="Download current .sim file" class="p-1.5 text-xs text-zinc-400 hover:text-white hover:bg-white/[0.08] rounded-md apple-transition shrink-0">
+                    <i class="fa-solid fa-arrow-down-to-bracket text-[11px]"></i>
+                </button>
             </div>
         </div>
 
-        <!-- Center: Script Selector + Custom Script Controls -->
-        <div class="flex items-center space-x-2 mx-4 max-w-xl w-full">
-            <!-- Dropdown -->
-            <div class="relative flex-1">
-                <i class="fa-solid fa-code absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-500 pointer-events-none"></i>
-                <select id="exampleSelector" class="w-full bg-obsidian-850 hover:bg-obsidian-800 text-xs border border-obsidian-700/80 rounded-lg pl-9 pr-8 py-2 text-slate-200 focus:outline-none focus:border-emerald-500 transition cursor-pointer appearance-none truncate font-mono">
-                    <option value="" disabled selected>Loading scripts...</option>
-                </select>
-                <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-500 pointer-events-none"></i>
-            </div>
-
-            <!-- New Script Button -->
-            <button onclick="openNewScriptModal()" title="Create New Script" class="px-3 py-2 bg-obsidian-850 hover:bg-obsidian-800 border border-obsidian-700/80 text-xs rounded-lg text-emerald-400 hover:text-emerald-300 flex items-center space-x-1.5 transition shrink-0 font-medium shadow-sm">
-                <i class="fa-solid fa-plus text-xs"></i>
-                <span class="hidden sm:inline">New</span>
-            </button>
-
-            <!-- Save Custom Script Button -->
-            <button onclick="saveCurrentScript()" id="saveScriptBtn" title="Save Script to My Custom Library (Ctrl+S)" class="px-3 py-2 bg-obsidian-850 hover:bg-obsidian-800 border border-obsidian-700/80 text-xs rounded-lg text-slate-300 hover:text-white flex items-center space-x-1.5 transition shrink-0 font-medium shadow-sm">
-                <i class="fa-regular fa-floppy-disk text-xs"></i>
-                <span class="hidden sm:inline">Save</span>
-            </button>
-
-            <!-- Import .sim file button -->
-            <button onclick="document.getElementById('fileImporter').click()" title="Open .sim file from computer" class="px-2.5 py-2 bg-obsidian-850 hover:bg-obsidian-800 border border-obsidian-700/80 text-xs rounded-lg text-slate-400 hover:text-slate-200 transition shrink-0">
-                <i class="fa-solid fa-folder-open"></i>
-            </button>
-            <input type="file" id="fileImporter" accept=".sim,.txt" onchange="handleFileImport(event)" class="hidden">
-
-            <!-- Export .sim file button -->
-            <button onclick="exportCurrentSimFile()" title="Download current .sim file" class="px-2.5 py-2 bg-obsidian-850 hover:bg-obsidian-800 border border-obsidian-700/80 text-xs rounded-lg text-slate-400 hover:text-slate-200 transition shrink-0">
-                <i class="fa-solid fa-file-arrow-down"></i>
-            </button>
-        </div>
-
-        <!-- Right: Actions & Compilation Controls -->
-        <div class="flex items-center space-x-3 shrink-0">
+        <!-- Right: PassBuilder Segmented Control & Compile Button -->
+        <div class="flex items-center space-x-2.5 shrink-0">
             
-            <!-- Optimization Level Segmented Control -->
-            <div class="flex items-center bg-obsidian-850 rounded-lg p-1 border border-obsidian-700/80 text-xs">
-                <span class="text-slate-400 px-2 text-[11px] font-medium hidden sm:inline">PassBuilder:</span>
-                <button onclick="setOptLevel(0)" id="opt-0" class="opt-btn px-2.5 py-1 rounded text-slate-400 hover:text-white transition text-xs font-mono">-O0</button>
-                <button onclick="setOptLevel(1)" id="opt-1" class="opt-btn px-2.5 py-1 rounded text-slate-400 hover:text-white transition text-xs font-mono">-O1</button>
-                <button onclick="setOptLevel(2)" id="opt-2" class="opt-btn px-2.5 py-1 rounded text-slate-400 hover:text-white transition text-xs font-mono">-O2</button>
-                <button onclick="setOptLevel(3)" id="opt-3" class="opt-btn px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-400 font-semibold border border-emerald-500/30 transition text-xs font-mono">-O3</button>
+            <!-- Apple-Style Recessed Segmented Pill for PassBuilder -->
+            <div class="flex items-center bg-black/50 p-0.5 rounded-lg border border-white/[0.06] text-xs">
+                <span class="text-[#6E6E73] px-2 text-[11px] font-medium hidden sm:inline select-none">PassBuilder:</span>
+                <button onclick="setOptLevel(0)" id="opt-0" class="opt-btn px-2.5 py-1 rounded-md text-zinc-400 hover:text-zinc-200 apple-transition text-xs font-mono">-O0</button>
+                <button onclick="setOptLevel(1)" id="opt-1" class="opt-btn px-2.5 py-1 rounded-md text-zinc-400 hover:text-zinc-200 apple-transition text-xs font-mono">-O1</button>
+                <button onclick="setOptLevel(2)" id="opt-2" class="opt-btn px-2.5 py-1 rounded-md text-zinc-400 hover:text-zinc-200 apple-transition text-xs font-mono">-O2</button>
+                <button onclick="setOptLevel(3)" id="opt-3" class="opt-btn px-2.5 py-1 rounded-md bg-zinc-800 text-white shadow-sm border border-white/10 font-semibold apple-transition text-xs font-mono">-O3</button>
             </div>
 
-            <!-- Run Test Suite Trigger -->
-            <button onclick="switchTab('tests'); runTestSuite();" class="px-3.5 py-2 text-xs font-medium text-slate-300 bg-obsidian-850 hover:bg-obsidian-800 border border-obsidian-700/80 rounded-lg flex items-center space-x-2 transition shadow-sm">
-                <i class="fa-solid fa-vial-circle-check text-cyan-400"></i>
+            <!-- 30 Tests Pill Trigger -->
+            <button onclick="switchTab('tests'); runTestSuite();" class="px-2.5 py-1 text-xs font-medium text-zinc-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] rounded-lg flex items-center space-x-1.5 apple-transition">
+                <i class="fa-solid fa-flask-vial text-zinc-400 text-[11px]"></i>
                 <span class="hidden sm:inline">30 Tests</span>
             </button>
 
-            <!-- Compile & Run Primary Button -->
-            <button id="compileBtn" onclick="compileCurrentCode()" class="px-5 py-2 text-xs font-bold tracking-wide uppercase bg-emerald-500 hover:bg-emerald-400 text-obsidian-950 rounded-lg shadow-lg flex items-center space-x-2 transition active:scale-95">
-                <i class="fa-solid fa-play text-xs"></i>
+            <!-- Compile & Run Primary Apple Pro Button -->
+            <button id="compileBtn" onclick="compileCurrentCode()" class="bg-[#F5F5F7] hover:bg-white text-[#09090B] font-medium text-xs px-3.5 py-1.5 rounded-lg shadow-sm apple-transition active:scale-[0.98] flex items-center space-x-2">
+                <i class="fa-solid fa-play text-[10px]"></i>
                 <span>Compile & Run</span>
-                <kbd class="hidden md:inline-block text-[10px] bg-obsidian-950/20 text-obsidian-950 px-1.5 py-0.5 rounded font-mono ml-1 font-semibold">Ctrl+Enter</kbd>
+                <kbd class="hidden md:inline-block text-[10px] bg-black/10 text-zinc-700 px-1 py-0.5 rounded font-mono ml-0.5 font-medium">Ctrl+↵</kbd>
             </button>
         </div>
     </header>
 
     <!-- ============================================================ -->
-    <!-- MAIN WORKSPACE: Clean 2-Pane Split                           -->
+    <!-- MAIN WORKSPACE: 2-Pane Split (Xcode / Instruments Layout)     -->
     <!-- ============================================================ -->
-    <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden h-[calc(100vh-4rem)]">
+    <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden h-[calc(100vh-3.5rem)]">
         
         <!-- -------------------------------------------------------- -->
-        <!-- LEFT PANE: Source Code Editor (5 cols on lg)             -->
+        <!-- LEFT PANE: Xcode-Inspired Source Editor (5 cols on lg)   -->
         <!-- -------------------------------------------------------- -->
-        <section class="lg:col-span-5 border-r border-obsidian-800 flex flex-col bg-obsidian-950 h-full overflow-hidden">
+        <section class="lg:col-span-5 border-r border-white/[0.06] flex flex-col bg-[#0B0B0E] h-full overflow-hidden">
             
-            <!-- Editor Topbar -->
-            <div class="px-5 py-3 bg-obsidian-900 border-b border-obsidian-800 flex items-center justify-between text-xs">
-                <div class="flex items-center space-x-2.5">
-                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <!-- Editor Header Bar -->
+            <div class="px-4 py-2.5 bg-[#0D0D10]/80 border-b border-white/[0.06] flex items-center justify-between text-xs">
+                <div class="flex items-center space-x-2">
+                    <span class="w-2 h-2 rounded-full bg-[#30D158] inline-block shadow-[0_0_8px_rgba(48,209,88,0.4)]"></span>
                     <div class="flex items-center space-x-1.5 cursor-pointer group" onclick="renameCurrentScript()" title="Click to rename script">
-                        <span id="currentFileName" class="font-mono text-slate-200 font-semibold text-xs group-hover:text-emerald-400 transition">05_fibonacci.sim</span>
-                        <i class="fa-solid fa-pen text-[9px] text-slate-500 group-hover:text-emerald-400 transition"></i>
+                        <span id="currentFileName" class="font-mono text-[#F5F5F7] font-medium text-xs group-hover:text-white transition">05_fibonacci.sim</span>
+                        <i class="fa-solid fa-pen text-[9px] text-[#6E6E73] group-hover:text-zinc-300 transition"></i>
                     </div>
-                    <span id="customScriptBadge" class="hidden text-[10px] px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 font-mono">Custom</span>
-                    <span id="codeLengthBadge" class="text-slate-500 font-mono text-[11px]">(16 lines)</span>
+                    <span id="customScriptBadge" class="hidden text-[10px] px-1.5 py-0.2 rounded bg-white/[0.06] text-zinc-300 border border-white/[0.08] font-mono">Custom</span>
+                    <span id="codeLengthBadge" class="text-[#6E6E73] font-mono text-[11px]">(16 lines)</span>
                 </div>
-                <div class="flex items-center space-x-2 text-slate-400 text-xs">
-                    <button id="deleteScriptBtn" onclick="deleteCurrentScript()" title="Delete this custom script" class="hidden hover:text-rose-400 p-1.5 rounded hover:bg-obsidian-800 transition">
+                <div class="flex items-center space-x-1 text-zinc-400 text-xs">
+                    <button id="deleteScriptBtn" onclick="deleteCurrentScript()" title="Delete this custom script" class="hidden hover:text-rose-400 p-1.5 rounded hover:bg-white/[0.06] apple-transition">
                         <i class="fa-regular fa-trash-can text-xs"></i>
                     </button>
-                    <button onclick="saveCurrentScript()" title="Save (Ctrl+S)" class="hover:text-emerald-400 p-1.5 rounded hover:bg-obsidian-800 transition">
+                    <button onclick="saveCurrentScript()" title="Save (Ctrl+S)" class="hover:text-white p-1.5 rounded hover:bg-white/[0.06] apple-transition">
                         <i class="fa-regular fa-floppy-disk text-xs"></i>
                     </button>
-                    <button onclick="formatCodeSnippet()" title="Reset snippet" class="hover:text-white p-1.5 rounded hover:bg-obsidian-800 transition">
+                    <button onclick="formatCodeSnippet()" title="Reset snippet" class="hover:text-white p-1.5 rounded hover:bg-white/[0.06] apple-transition">
                         <i class="fa-solid fa-rotate-right text-xs"></i>
                     </button>
-                    <button onclick="copySourceCode()" title="Copy Code" class="hover:text-white p-1.5 rounded hover:bg-obsidian-800 transition">
+                    <button onclick="copySourceCode()" title="Copy Code" class="hover:text-white p-1.5 rounded hover:bg-white/[0.06] apple-transition">
                         <i class="fa-regular fa-copy text-xs"></i>
                     </button>
                 </div>
             </div>
 
-            <!-- Quick Snippet Pills (Single Clean Row) -->
-            <div class="px-5 py-2 bg-obsidian-900/60 border-b border-obsidian-800/80 flex items-center space-x-1.5 overflow-x-auto text-[11px]">
-                <span class="text-slate-500 text-[10px] font-semibold uppercase tracking-wider mr-1">Presets:</span>
-                <button onclick="loadExampleByName('05_fibonacci.sim')" class="px-2.5 py-1 bg-obsidian-850 hover:bg-obsidian-800 border border-obsidian-700/60 rounded text-slate-300 whitespace-nowrap transition">Fibonacci</button>
-                <button onclick="loadExampleByName('07_prime_check.sim')" class="px-2.5 py-1 bg-obsidian-850 hover:bg-obsidian-800 border border-obsidian-700/60 rounded text-slate-300 whitespace-nowrap transition">Prime Check</button>
-                <button onclick="loadExampleByName('13_collatz.sim')" class="px-2.5 py-1 bg-obsidian-850 hover:bg-obsidian-800 border border-obsidian-700/60 rounded text-slate-300 whitespace-nowrap transition">Collatz 27</button>
-                <button onclick="loadExampleByName('06_factorial.sim')" class="px-2.5 py-1 bg-obsidian-850 hover:bg-obsidian-800 border border-obsidian-700/60 rounded text-slate-300 whitespace-nowrap transition">Factorial 6!</button>
-                <button onclick="loadExampleByName('08_gcd.sim')" class="px-2.5 py-1 bg-obsidian-850 hover:bg-obsidian-800 border border-obsidian-700/60 rounded text-slate-300 whitespace-nowrap transition">GCD</button>
-                <button onclick="loadExampleByName('09_for_loop.sim')" class="px-2.5 py-1 bg-obsidian-850 hover:bg-obsidian-800 border border-obsidian-700/60 rounded text-slate-300 whitespace-nowrap transition">For Loop</button>
-                <button onclick="loadExampleByName('10_print_demo.sim')" class="px-2.5 py-1 bg-obsidian-850 hover:bg-obsidian-800 border border-obsidian-700/60 rounded text-slate-300 whitespace-nowrap transition">Print</button>
+            <!-- Presets Row (Sleek Horizontal Scrollable Ghost Pills) -->
+            <div class="px-4 py-2 bg-[#0D0D10]/40 border-b border-white/[0.05] flex items-center space-x-1.5 overflow-x-auto no-scrollbar text-xs">
+                <span class="text-[#6E6E73] text-[10px] font-semibold uppercase tracking-wider mr-1 shrink-0">Presets:</span>
+                <button onclick="loadExampleByName('05_fibonacci.sim')" class="text-xs text-zinc-400 hover:text-white bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.05] rounded-full px-2.5 py-1 apple-transition whitespace-nowrap">Fibonacci</button>
+                <button onclick="loadExampleByName('07_prime_check.sim')" class="text-xs text-zinc-400 hover:text-white bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.05] rounded-full px-2.5 py-1 apple-transition whitespace-nowrap">Prime Check</button>
+                <button onclick="loadExampleByName('13_collatz.sim')" class="text-xs text-zinc-400 hover:text-white bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.05] rounded-full px-2.5 py-1 apple-transition whitespace-nowrap">Collatz 27</button>
+                <button onclick="loadExampleByName('06_factorial.sim')" class="text-xs text-zinc-400 hover:text-white bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.05] rounded-full px-2.5 py-1 apple-transition whitespace-nowrap">Factorial 6!</button>
+                <button onclick="loadExampleByName('08_gcd.sim')" class="text-xs text-zinc-400 hover:text-white bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.05] rounded-full px-2.5 py-1 apple-transition whitespace-nowrap">GCD</button>
+                <button onclick="loadExampleByName('09_for_loop.sim')" class="text-xs text-zinc-400 hover:text-white bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.05] rounded-full px-2.5 py-1 apple-transition whitespace-nowrap">For Loop</button>
+                <button onclick="loadExampleByName('10_print_demo.sim')" class="text-xs text-zinc-400 hover:text-white bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.05] rounded-full px-2.5 py-1 apple-transition whitespace-nowrap">Print</button>
             </div>
 
             <!-- Code Editor Area -->
-            <div class="flex-1 flex overflow-hidden relative">
-                <!-- Line Numbers -->
-                <div id="lineNumbers" class="w-12 py-5 select-none bg-obsidian-950 text-right pr-3.5 font-mono text-xs text-slate-600 border-r border-obsidian-800/80 leading-6 overflow-hidden">
+            <div class="flex-1 flex overflow-hidden relative bg-[#0B0B0E]">
+                <!-- Line Numbers (Muted SF Mono) -->
+                <div id="lineNumbers" class="w-11 py-4 select-none bg-[#09090C] text-right pr-3 font-mono text-xs text-[#48484A] border-r border-white/[0.05] leading-6 overflow-hidden">
                     1
                 </div>
                 <!-- Textarea Code Input -->
-                <textarea id="codeEditor" spellcheck="false" class="flex-1 bg-transparent text-slate-100 font-mono text-xs leading-6 p-5 resize-none focus:outline-none overflow-y-auto" placeholder="// Write Simmer source code here..."></textarea>
+                <textarea id="codeEditor" spellcheck="false" class="flex-1 bg-transparent text-[#F5F5F7] font-mono text-xs leading-6 p-4 resize-none focus:outline-none overflow-y-auto" placeholder="// Write Simmer source code here..."></textarea>
             </div>
 
             <!-- Error Banner (if any) -->
-            <div id="errorBanner" class="hidden p-4 bg-rose-950/40 border-t border-rose-500/40 text-xs">
-                <div class="flex items-start space-x-3">
-                    <i class="fa-solid fa-circle-exclamation text-rose-400 mt-0.5 text-sm"></i>
+            <div id="errorBanner" class="hidden p-3.5 bg-rose-950/20 border-t border-rose-500/30 text-xs">
+                <div class="flex items-start space-x-2.5">
+                    <i class="fa-solid fa-circle-exclamation text-rose-400 mt-0.5 text-xs"></i>
                     <div class="flex-1">
                         <div class="flex items-center justify-between">
-                            <span id="errorStageBadge" class="font-bold text-rose-300 uppercase tracking-wider text-[10px] px-2 py-0.5 rounded bg-rose-500/20 border border-rose-500/30">Compiler Error</span>
-                            <span class="text-[11px] text-slate-400">Compilation halted</span>
+                            <span id="errorStageBadge" class="font-medium text-rose-300 uppercase tracking-wider text-[10px] px-2 py-0.5 rounded bg-rose-500/10 border border-rose-500/20 font-mono">Compiler Error</span>
+                            <span class="text-[11px] text-zinc-500">Compilation halted</span>
                         </div>
                         <p id="errorMessage" class="text-rose-200 mt-1 font-mono text-xs leading-relaxed"></p>
                     </div>
                 </div>
             </div>
 
-            <!-- Editor Status Footer -->
-            <div class="px-5 py-2 bg-obsidian-900 border-t border-obsidian-800 text-[11px] text-slate-500 flex items-center justify-between font-mono">
+            <!-- Sleek Xcode Status Bar -->
+            <div class="h-7 bg-[#0E0E12] border-t border-white/[0.05] text-[11px] text-zinc-500 px-4 flex items-center justify-between font-mono shrink-0">
                 <span>Grammar: Simmer v1.2</span>
                 <span>Press Ctrl+Enter to re-compile</span>
             </div>
         </section>
 
         <!-- -------------------------------------------------------- -->
-        <!-- RIGHT PANE: Pipeline Inspector (7 cols on lg)             -->
+        <!-- RIGHT PANE: Pipeline Inspector & Telemetry (7 cols on lg)-->
         <!-- -------------------------------------------------------- -->
-        <section class="lg:col-span-7 flex flex-col bg-obsidian-900 h-full overflow-hidden">
+        <section class="lg:col-span-7 flex flex-col bg-[#08080A] h-full overflow-hidden">
             
-            <!-- Spacious Studio Tab Bar -->
-            <nav class="flex items-center px-6 bg-obsidian-950 border-b border-obsidian-800 overflow-x-auto no-scrollbar space-x-2 py-1">
-                <button onclick="switchTab('overview')" id="tab-btn-overview" class="tab-btn active px-4 py-2.5 text-xs font-semibold rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center space-x-2 transition">
-                    <i class="fa-solid fa-gauge-high text-xs"></i>
-                    <span>Overview</span>
-                </button>
-                <button onclick="switchTab('tokens')" id="tab-btn-tokens" class="tab-btn px-4 py-2.5 text-xs font-medium rounded-lg text-slate-400 hover:text-slate-200 hover:bg-obsidian-850 flex items-center space-x-2 transition">
-                    <i class="fa-solid fa-font text-xs"></i>
-                    <span>Tokens</span>
-                    <span id="tokenCountBadge" class="text-[10px] px-1.5 py-0.2 rounded-full bg-obsidian-800 text-slate-400 font-mono">0</span>
-                </button>
-                <button onclick="switchTab('ast')" id="tab-btn-ast" class="tab-btn px-4 py-2.5 text-xs font-medium rounded-lg text-slate-400 hover:text-slate-200 hover:bg-obsidian-850 flex items-center space-x-2 transition">
-                    <i class="fa-solid fa-network-wired text-xs"></i>
-                    <span>AST Tree</span>
-                </button>
-                <button onclick="switchTab('semantic')" id="tab-btn-semantic" class="tab-btn px-4 py-2.5 text-xs font-medium rounded-lg text-slate-400 hover:text-slate-200 hover:bg-obsidian-850 flex items-center space-x-2 transition">
-                    <i class="fa-solid fa-shield-halved text-xs"></i>
-                    <span>Symbol Table</span>
-                </button>
-                <button onclick="switchTab('ir')" id="tab-btn-ir" class="tab-btn px-4 py-2.5 text-xs font-medium rounded-lg text-slate-400 hover:text-slate-200 hover:bg-obsidian-850 flex items-center space-x-2 transition">
-                    <i class="fa-solid fa-bolt text-xs"></i>
-                    <span>LLVM IR Diff</span>
-                </button>
-                <button onclick="switchTab('asm')" id="tab-btn-asm" class="tab-btn px-4 py-2.5 text-xs font-medium rounded-lg text-slate-400 hover:text-slate-200 hover:bg-obsidian-850 flex items-center space-x-2 transition">
-                    <i class="fa-solid fa-microchip text-xs"></i>
-                    <span>Assembly</span>
-                </button>
-                <button onclick="switchTab('tests')" id="tab-btn-tests" class="tab-btn px-4 py-2.5 text-xs font-medium rounded-lg text-slate-400 hover:text-slate-200 hover:bg-obsidian-850 flex items-center space-x-2 transition">
-                    <i class="fa-solid fa-flask text-xs"></i>
-                    <span>Test Suite</span>
-                </button>
-            </nav>
+            <!-- Apple Segmented Navigation Bar -->
+            <div class="px-6 pt-3 pb-1 shrink-0">
+                <nav class="bg-[#121215] p-1 rounded-xl border border-white/[0.06] flex items-center space-x-1 overflow-x-auto no-scrollbar">
+                    <button onclick="switchTab('overview')" id="tab-btn-overview" class="tab-btn active px-3.5 py-1.5 rounded-lg text-xs font-medium bg-white/[0.09] text-white shadow-sm border border-white/[0.08] flex items-center space-x-2 apple-transition shrink-0">
+                        <i class="fa-solid fa-gauge-high text-xs"></i>
+                        <span>Overview</span>
+                    </button>
+                    <button onclick="switchTab('tokens')" id="tab-btn-tokens" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03] flex items-center space-x-2 apple-transition shrink-0">
+                        <i class="fa-solid fa-font text-xs"></i>
+                        <span>Tokens</span>
+                        <span id="tokenCountBadge" class="text-[10px] px-1.5 py-0.2 rounded-full bg-white/[0.08] text-zinc-300 font-mono">0</span>
+                    </button>
+                    <button onclick="switchTab('ast')" id="tab-btn-ast" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03] flex items-center space-x-2 apple-transition shrink-0">
+                        <i class="fa-solid fa-network-wired text-xs"></i>
+                        <span>AST Tree</span>
+                    </button>
+                    <button onclick="switchTab('semantic')" id="tab-btn-semantic" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03] flex items-center space-x-2 apple-transition shrink-0">
+                        <i class="fa-solid fa-shield-halved text-xs"></i>
+                        <span>Symbol Table</span>
+                    </button>
+                    <button onclick="switchTab('ir')" id="tab-btn-ir" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03] flex items-center space-x-2 apple-transition shrink-0">
+                        <i class="fa-solid fa-bolt text-xs"></i>
+                        <span>LLVM IR Diff</span>
+                    </button>
+                    <button onclick="switchTab('asm')" id="tab-btn-asm" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03] flex items-center space-x-2 apple-transition shrink-0">
+                        <i class="fa-solid fa-microchip text-xs"></i>
+                        <span>Assembly</span>
+                    </button>
+                    <button onclick="switchTab('tests')" id="tab-btn-tests" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03] flex items-center space-x-2 apple-transition shrink-0">
+                        <i class="fa-solid fa-flask text-xs"></i>
+                        <span>Test Suite</span>
+                    </button>
+                </nav>
+            </div>
 
-            <!-- Tab Contents (Comfortable Padding & Spacing) -->
-            <div class="flex-1 overflow-y-auto p-8 space-y-6">
+            <!-- Tab Contents Container -->
+            <div class="flex-1 overflow-y-auto px-6 py-4 space-y-5">
 
                 <!-- ------------------------------------------------ -->
-                <!-- TAB 1: OVERVIEW & METRICS (Redesigned & Clean)    -->
+                <!-- TAB 1: OVERVIEW & METRICS (Apple Bento Layout)    -->
                 <!-- ------------------------------------------------ -->
-                <div id="tab-overview" class="tab-pane space-y-6">
+                <div id="tab-overview" class="tab-pane space-y-5">
                     
-                    <!-- Sleek Unified Stats Ribbon (Replaces 4 bulky cards) -->
-                    <div class="bg-obsidian-950 border border-obsidian-800 rounded-2xl p-6 shadow-sm">
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 divide-y md:divide-y-0 md:divide-x divide-obsidian-800">
+                    <!-- Telemetry Bento Grid (Apple Material Tokens) -->
+                    <div class="bg-[#121215]/85 backdrop-blur-2xl border border-white/[0.07] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] rounded-2xl p-5">
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-5 divide-y md:divide-y-0 md:divide-x divide-white/[0.06]">
                             
                             <!-- Stat 1: Instructions -->
                             <div class="space-y-1">
-                                <span class="text-slate-400 text-xs uppercase tracking-wider font-medium">Instructions</span>
-                                <div class="flex items-baseline space-x-2.5 pt-1">
-                                    <span id="kpiBefore" class="text-xl font-bold font-mono text-slate-400">20</span>
-                                    <span class="text-slate-600 font-mono">→</span>
-                                    <span id="kpiAfter" class="text-2xl font-bold font-mono text-emerald-400">6</span>
+                                <span class="text-[#6E6E73] text-[11px] uppercase tracking-wider font-medium">Instructions</span>
+                                <div class="flex items-baseline space-x-2 pt-1 font-mono">
+                                    <span id="kpiBefore" class="text-zinc-500 line-through text-lg font-mono tabular-numbers">20</span>
+                                    <span class="text-zinc-600 font-mono text-xs">→</span>
+                                    <span id="kpiAfter" class="text-3xl font-semibold tracking-tight text-[#F5F5F7] font-mono tabular-numbers">6</span>
                                 </div>
-                                <span id="kpiDiff" class="text-xs text-slate-500 font-mono block">14 eliminated</span>
+                                <span id="kpiDiff" class="text-xs text-zinc-400 font-mono block mt-1">14 eliminated</span>
                             </div>
 
-                            <!-- Stat 2: Efficiency -->
-                            <div class="space-y-1 md:pl-6 pt-4 md:pt-0">
-                                <span class="text-slate-400 text-xs uppercase tracking-wider font-medium">Efficiency Gain</span>
-                                <div class="flex items-baseline space-x-1 pt-1">
-                                    <span id="kpiReduction" class="text-2xl font-bold font-mono text-teal-400">70.0%</span>
+                            <!-- Stat 2: Efficiency Gain -->
+                            <div class="space-y-1 md:pl-5 pt-4 md:pt-0">
+                                <span class="text-[#6E6E73] text-[11px] uppercase tracking-wider font-medium">Efficiency Gain</span>
+                                <div class="flex items-baseline space-x-1 pt-1 font-mono">
+                                    <span id="kpiReduction" class="text-3xl font-semibold tracking-tight text-[#F5F5F7] font-mono tabular-numbers">70.0%</span>
                                 </div>
-                                <span class="text-xs text-teal-400/80 font-mono block">Redundant code cut</span>
+                                <div class="mt-1">
+                                    <span class="inline-flex items-center text-[10px] font-medium text-[#30D158] bg-[#30D158]/10 border border-[#30D158]/20 px-2 py-0.5 rounded-full">
+                                        <i class="fa-solid fa-arrow-down mr-1 text-[9px]"></i>Redundant code cut
+                                    </span>
+                                </div>
                             </div>
 
-                            <!-- Stat 3: JIT Result -->
-                            <div class="space-y-1 md:pl-6 pt-4 md:pt-0">
-                                <span class="text-slate-400 text-xs uppercase tracking-wider font-medium">JIT Exit Code</span>
-                                <div class="flex items-baseline space-x-1 pt-1">
-                                    <span id="kpiExitCode" class="text-2xl font-bold font-mono text-cyan-400">55</span>
+                            <!-- Stat 3: JIT Exit Code -->
+                            <div class="space-y-1 md:pl-5 pt-4 md:pt-0">
+                                <span class="text-[#6E6E73] text-[11px] uppercase tracking-wider font-medium">JIT Exit Code</span>
+                                <div class="flex items-baseline space-x-1 pt-1 font-mono">
+                                    <span id="kpiExitCode" class="text-3xl font-semibold tracking-tight text-[#F5F5F7] font-mono tabular-numbers">55</span>
                                 </div>
-                                <span class="text-xs text-cyan-400/80 font-mono block">In-Memory MCJIT</span>
+                                <span class="text-xs text-zinc-400 font-mono block mt-1">In-Memory MCJIT</span>
                             </div>
 
-                            <!-- Stat 4: Latency -->
-                            <div class="space-y-1 md:pl-6 pt-4 md:pt-0">
-                                <span class="text-slate-400 text-xs uppercase tracking-wider font-medium">Total Latency</span>
-                                <div class="flex items-baseline space-x-1 pt-1">
-                                    <span id="kpiLatency" class="text-2xl font-bold font-mono text-violet-400">17.9</span>
-                                    <span class="text-xs text-slate-500 font-mono">ms</span>
+                            <!-- Stat 4: Total Latency -->
+                            <div class="space-y-1 md:pl-5 pt-4 md:pt-0">
+                                <span class="text-[#6E6E73] text-[11px] uppercase tracking-wider font-medium">Total Latency</span>
+                                <div class="flex items-baseline space-x-1 pt-1 font-mono">
+                                    <span id="kpiLatency" class="text-3xl font-semibold tracking-tight text-[#F5F5F7] font-mono tabular-numbers">17.9</span>
+                                    <span class="text-xs text-[#6E6E73] font-mono">ms</span>
                                 </div>
-                                <span class="text-xs text-violet-400/80 font-mono block">Frontend + PassBuilder</span>
+                                <span class="text-xs text-zinc-400 font-mono block mt-1">Frontend + PassBuilder</span>
                             </div>
 
                         </div>
                     </div>
 
-                    <!-- Live Terminal Output Card (Clean Windowed Console) -->
-                    <div class="bg-obsidian-950 rounded-2xl overflow-hidden border border-obsidian-800 shadow-sm">
-                        <!-- Terminal Titlebar with macOS dots -->
-                        <div class="px-5 py-3 bg-obsidian-900 border-b border-obsidian-800 flex items-center justify-between">
-                            <div class="flex items-center space-x-2.5">
-                                <span class="w-3 h-3 rounded-full bg-rose-500/80 inline-block"></span>
-                                <span class="w-3 h-3 rounded-full bg-amber-500/80 inline-block"></span>
-                                <span class="w-3 h-3 rounded-full bg-emerald-500/80 inline-block"></span>
-                                <span class="ml-2 font-mono text-xs text-slate-300 font-medium">Live JIT Terminal Console</span>
+                    <!-- Live JIT Terminal Console (Apple macOS Terminal / Xcode Console) -->
+                    <div class="bg-[#070709] rounded-2xl overflow-hidden border border-white/[0.07] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
+                        <!-- macOS Titlebar with Authentic Traffic Lights -->
+                        <div class="px-4 py-2.5 bg-white/[0.02] border-b border-white/[0.06] flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-[#FF5F56] border border-black/20 inline-block"></span>
+                                <span class="w-2.5 h-2.5 rounded-full bg-[#FFBD2E] border border-black/20 inline-block"></span>
+                                <span class="w-2.5 h-2.5 rounded-full bg-[#27C93F] border border-black/20 inline-block"></span>
+                                <span class="ml-2 font-mono text-xs text-zinc-400 font-medium">Live JIT Terminal Console</span>
                             </div>
-                            <span class="text-[11px] text-slate-500 font-mono">stdout / printf runtime</span>
+                            <span class="text-[11px] text-zinc-500 font-mono">stdout / printf runtime</span>
                         </div>
-                        <!-- Terminal Logs Body -->
-                        <div class="p-6 font-mono text-xs text-slate-200 min-h-[140px] max-h-[220px] overflow-y-auto leading-relaxed">
-                            <div id="terminalOutput" class="text-emerald-400">
-                                <div><span class="text-slate-500">// Simmer Compiler v1.2 Execution Log</span></div>
-                                <div class="mt-1 font-bold text-emerald-400">✓ Program exited with code: 55</div>
+                        <!-- Terminal Console Body -->
+                        <div class="p-5 font-mono text-xs text-[#F5F5F7] min-h-[130px] max-h-[200px] overflow-y-auto leading-relaxed">
+                            <div id="terminalOutput">
+                                <div class="text-zinc-500">// Simmer Compiler v1.2 Execution Log</div>
+                                <div class="mt-1 font-medium text-[#30D158] flex items-center space-x-1.5">
+                                    <i class="fa-solid fa-check text-xs"></i>
+                                    <span>Program exited with code: 55</span>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Pipeline Stage Execution Stepper (Spacious Horizontal Track) -->
-                    <div class="bg-obsidian-950 rounded-2xl p-6 border border-obsidian-800 space-y-4 shadow-sm">
+                    <!-- End-to-End Pipeline Execution Trace (Connected Apple Bento Grid) -->
+                    <div class="bg-[#121215]/85 backdrop-blur-2xl rounded-2xl p-5 border border-white/[0.07] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] space-y-3.5">
                         <div class="flex items-center justify-between">
-                            <h4 class="text-xs uppercase tracking-wider font-semibold text-slate-400 flex items-center space-x-2">
-                                <i class="fa-solid fa-diagram-project text-cyan-400"></i>
+                            <h4 class="text-xs uppercase tracking-wider font-semibold text-zinc-400 flex items-center space-x-2">
+                                <i class="fa-solid fa-diagram-project text-zinc-400 text-xs"></i>
                                 <span>End-to-End Pipeline Execution Trace</span>
                             </h4>
-                            <span class="text-[11px] text-emerald-400 font-mono font-medium">7 / 7 Phases Passed ✓</span>
+                            <span class="text-[11px] text-[#30D158] font-mono font-medium flex items-center space-x-1">
+                                <i class="fa-solid fa-circle-check text-[10px]"></i>
+                                <span>7 / 7 Phases Passed</span>
+                            </span>
                         </div>
                         
-                        <!-- Responsive Horizontal Stepper Grid -->
-                        <div id="pipelineTimeline" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-                            <!-- Injected by JavaScript -->
+                        <!-- Responsive 4x2 Apple Bento Pipeline Grid (No single-word truncation!) -->
+                        <div id="pipelineTimeline" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                            <!-- Injected by JavaScript with full descriptions and proportion bars -->
                         </div>
                     </div>
 
@@ -396,95 +448,95 @@
                 <!-- ------------------------------------------------ -->
                 <!-- TAB 2: LEXER TOKENS                              -->
                 <!-- ------------------------------------------------ -->
-                <div id="tab-tokens" class="tab-pane hidden space-y-5">
+                <div id="tab-tokens" class="tab-pane hidden space-y-4">
                     <div class="flex items-center justify-between">
                         <div>
-                            <h3 class="text-sm font-semibold text-slate-200">Tokenized Lexeme Stream</h3>
-                            <p class="text-xs text-slate-400 mt-0.5">Stream of lexical tokens generated by regex pattern matching.</p>
+                            <h3 class="text-sm font-semibold text-[#F5F5F7]">Tokenized Lexeme Stream</h3>
+                            <p class="text-xs text-zinc-400 mt-0.5">Stream of lexical tokens generated by hand-rolled regex matcher.</p>
                         </div>
-                        <input id="tokenSearchInput" oninput="filterTokens()" type="text" placeholder="Filter tokens..." class="bg-obsidian-850 border border-obsidian-700 text-xs px-3.5 py-2 rounded-lg w-56 text-slate-200 focus:outline-none focus:border-emerald-500">
+                        <input id="tokenSearchInput" oninput="filterTokens()" type="text" placeholder="Filter tokens..." class="bg-white/[0.03] border border-white/[0.07] text-xs px-3 py-1.5 rounded-lg w-52 text-[#F5F5F7] focus:outline-none focus:border-white/20 font-mono">
                     </div>
 
                     <!-- Token Chips Grid -->
-                    <div id="tokenGrid" class="flex flex-wrap gap-2.5 max-h-[500px] overflow-y-auto p-6 bg-obsidian-950 rounded-2xl border border-obsidian-800">
-                        <p class="text-xs text-slate-500 font-mono">No tokens yet. Compile code to see tokens.</p>
+                    <div id="tokenGrid" class="flex flex-wrap gap-2 max-h-[480px] overflow-y-auto p-5 bg-[#121215]/85 rounded-2xl border border-white/[0.07] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
+                        <p class="text-xs text-zinc-500 font-mono">No tokens yet. Compile code to see tokens.</p>
                     </div>
 
                     <!-- Token Legend -->
-                    <div class="flex items-center space-x-6 text-xs text-slate-400 pt-2">
-                        <span class="flex items-center space-x-2"><span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span><span>KEYWORD</span></span>
-                        <span class="flex items-center space-x-2"><span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span><span>IDENTIFIER</span></span>
-                        <span class="flex items-center space-x-2"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span><span>NUMBER</span></span>
-                        <span class="flex items-center space-x-2"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span><span>OPERATOR</span></span>
-                        <span class="flex items-center space-x-2"><span class="w-2.5 h-2.5 rounded-full bg-slate-500"></span><span>PUNCTUATION</span></span>
+                    <div class="flex items-center space-x-5 text-xs text-zinc-400 pt-1 font-mono text-[11px]">
+                        <span class="flex items-center space-x-1.5"><span class="w-2 h-2 rounded-full bg-purple-400"></span><span>KEYWORD</span></span>
+                        <span class="flex items-center space-x-1.5"><span class="w-2 h-2 rounded-full bg-blue-400"></span><span>IDENTIFIER</span></span>
+                        <span class="flex items-center space-x-1.5"><span class="w-2 h-2 rounded-full bg-[#30D158]"></span><span>NUMBER</span></span>
+                        <span class="flex items-center space-x-1.5"><span class="w-2 h-2 rounded-full bg-amber-400"></span><span>OPERATOR</span></span>
+                        <span class="flex items-center space-x-1.5"><span class="w-2 h-2 rounded-full bg-zinc-400"></span><span>PUNCTUATION</span></span>
                     </div>
                 </div>
 
                 <!-- ------------------------------------------------ -->
                 <!-- TAB 3: INTERACTIVE AST                           -->
                 <!-- ------------------------------------------------ -->
-                <div id="tab-ast" class="tab-pane hidden space-y-5">
+                <div id="tab-ast" class="tab-pane hidden space-y-4">
                     <div class="flex items-center justify-between">
                         <div>
-                            <h3 class="text-sm font-semibold text-slate-200">Abstract Syntax Tree (AST)</h3>
-                            <p class="text-xs text-slate-400 mt-0.5">Built by hand-rolled Recursive-Descent Parser with precedence climbing.</p>
+                            <h3 class="text-sm font-semibold text-[#F5F5F7]">Abstract Syntax Tree (AST)</h3>
+                            <p class="text-xs text-zinc-400 mt-0.5">Built by hand-rolled Recursive-Descent Parser with precedence climbing.</p>
                         </div>
-                        <button onclick="toggleAstRawView()" id="astToggleBtn" class="px-3.5 py-1.5 bg-obsidian-850 hover:bg-obsidian-800 border border-obsidian-700 text-xs rounded-lg text-slate-300 transition">
+                        <button onclick="toggleAstRawView()" id="astToggleBtn" class="px-3 py-1.5 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] text-xs rounded-lg text-zinc-300 apple-transition">
                             <i class="fa-solid fa-code mr-1.5"></i> Switch to Raw View
                         </button>
                     </div>
 
                     <!-- Visual Tree Container -->
-                    <div id="astTreeContainer" class="p-8 bg-obsidian-950 rounded-2xl border border-obsidian-800 max-h-[580px] overflow-y-auto">
-                        <div id="astTreeRoot" class="space-y-3">
-                            <p class="text-xs text-slate-500 font-mono">Compile code to inspect the generated Abstract Syntax Tree.</p>
+                    <div id="astTreeContainer" class="p-6 bg-[#121215]/85 rounded-2xl border border-white/[0.07] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] max-h-[540px] overflow-y-auto">
+                        <div id="astTreeRoot" class="space-y-2">
+                            <p class="text-xs text-zinc-500 font-mono">Compile code to inspect the generated Abstract Syntax Tree.</p>
                         </div>
                     </div>
 
                     <!-- Raw AST Container -->
-                    <div id="astRawContainer" class="hidden p-6 bg-obsidian-950 rounded-2xl border border-obsidian-800 max-h-[580px] overflow-y-auto">
-                        <pre id="astRawText" class="font-mono text-xs text-emerald-400 leading-relaxed"></pre>
+                    <div id="astRawContainer" class="hidden p-5 bg-[#121215]/85 rounded-2xl border border-white/[0.07] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] max-h-[540px] overflow-y-auto">
+                        <pre id="astRawText" class="font-mono text-xs text-zinc-300 leading-relaxed"></pre>
                     </div>
                 </div>
 
                 <!-- ------------------------------------------------ -->
                 <!-- TAB 4: SEMANTIC & SYMBOL TABLE                   -->
                 <!-- ------------------------------------------------ -->
-                <div id="tab-semantic" class="tab-pane hidden space-y-6">
+                <div id="tab-semantic" class="tab-pane hidden space-y-5">
                     <div class="flex items-center justify-between">
                         <div>
-                            <h3 class="text-sm font-semibold text-slate-200">Semantic Symbol Table</h3>
-                            <p class="text-xs text-slate-400 mt-0.5">Static analysis phase verifying declarations, scope resolution, and duplicate defense.</p>
+                            <h3 class="text-sm font-semibold text-[#F5F5F7]">Semantic Symbol Table</h3>
+                            <p class="text-xs text-zinc-400 mt-0.5">Static analysis phase verifying declarations, scope resolution, and duplicate defense.</p>
                         </div>
-                        <span class="px-3 py-1 rounded-full text-xs font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center space-x-1.5">
-                            <i class="fa-solid fa-check"></i>
+                        <span class="px-2.5 py-1 rounded-full text-xs font-mono bg-[#30D158]/10 text-[#30D158] border border-[#30D158]/20 flex items-center space-x-1.5">
+                            <i class="fa-solid fa-check text-[10px]"></i>
                             <span>Scope Validated</span>
                         </span>
                     </div>
 
                     <!-- Registered Variables Grid -->
-                    <div class="bg-obsidian-950 p-6 rounded-2xl border border-obsidian-800 space-y-4">
-                        <h4 class="text-xs uppercase tracking-wider font-semibold text-slate-400">Variables in Active Symbol Table</h4>
-                        <div id="symbolTableGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5">
-                            <p class="text-xs text-slate-500 font-mono col-span-full">No variables declared yet.</p>
+                    <div class="bg-[#121215]/85 p-5 rounded-2xl border border-white/[0.07] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] space-y-3">
+                        <h4 class="text-xs uppercase tracking-wider font-semibold text-zinc-400">Variables in Active Symbol Table</h4>
+                        <div id="symbolTableGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                            <p class="text-xs text-zinc-500 font-mono col-span-full">No variables declared yet.</p>
                         </div>
                     </div>
 
                     <!-- Compile-time Defensive Invariants -->
-                    <div class="bg-obsidian-950 p-6 rounded-2xl border border-obsidian-800 space-y-3.5">
-                        <h4 class="text-xs uppercase tracking-wider font-semibold text-slate-400">Compile-Time Safety Invariants</h4>
-                        <div class="space-y-2.5 text-xs font-mono">
-                            <div class="p-3.5 bg-obsidian-900 rounded-xl flex items-center justify-between">
-                                <span class="text-slate-300">1. Declaration Precedence</span>
-                                <span class="text-emerald-400 text-xs font-semibold"><i class="fa-solid fa-shield mr-1.5"></i>Enforced (let required)</span>
+                    <div class="bg-[#121215]/85 p-5 rounded-2xl border border-white/[0.07] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)] space-y-3">
+                        <h4 class="text-xs uppercase tracking-wider font-semibold text-zinc-400">Compile-Time Safety Invariants</h4>
+                        <div class="space-y-2 text-xs font-mono">
+                            <div class="p-3 bg-white/[0.02] border border-white/[0.05] rounded-xl flex items-center justify-between">
+                                <span class="text-zinc-300">1. Declaration Precedence</span>
+                                <span class="text-[#30D158] text-xs font-medium"><i class="fa-solid fa-shield mr-1.5"></i>Enforced (let required)</span>
                             </div>
-                            <div class="p-3.5 bg-obsidian-900 rounded-xl flex items-center justify-between">
-                                <span class="text-slate-300">2. Duplicate Declaration Defense</span>
-                                <span class="text-emerald-400 text-xs font-semibold"><i class="fa-solid fa-shield mr-1.5"></i>Protected (Error on re-decl)</span>
+                            <div class="p-3 bg-white/[0.02] border border-white/[0.05] rounded-xl flex items-center justify-between">
+                                <span class="text-zinc-300">2. Duplicate Declaration Defense</span>
+                                <span class="text-[#30D158] text-xs font-medium"><i class="fa-solid fa-shield mr-1.5"></i>Protected (Error on re-decl)</span>
                             </div>
-                            <div class="p-3.5 bg-obsidian-900 rounded-xl flex items-center justify-between">
-                                <span class="text-slate-300">3. Scope & Identifier Resolution</span>
-                                <span class="text-emerald-400 text-xs font-semibold"><i class="fa-solid fa-shield mr-1.5"></i>Resolved against symbol table</span>
+                            <div class="p-3 bg-white/[0.02] border border-white/[0.05] rounded-xl flex items-center justify-between">
+                                <span class="text-zinc-300">3. Scope & Identifier Resolution</span>
+                                <span class="text-[#30D158] text-xs font-medium"><i class="fa-solid fa-shield mr-1.5"></i>Resolved against symbol table</span>
                             </div>
                         </div>
                     </div>
@@ -493,32 +545,32 @@
                 <!-- ------------------------------------------------ -->
                 <!-- TAB 5: LLVM IR DIFF                              -->
                 <!-- ------------------------------------------------ -->
-                <div id="tab-ir" class="tab-pane hidden space-y-5">
+                <div id="tab-ir" class="tab-pane hidden space-y-4">
                     <div class="flex items-center justify-between">
                         <div>
-                            <h3 class="text-sm font-semibold text-slate-200">LLVM Intermediate Representation (IR)</h3>
-                            <p class="text-xs text-slate-400 mt-0.5">Side-by-side comparison of Raw IR vs. LLVM PassBuilder (<span id="irOptLabel" class="font-mono text-emerald-400">-O3</span>).</p>
+                            <h3 class="text-sm font-semibold text-[#F5F5F7]">LLVM Intermediate Representation (IR)</h3>
+                            <p class="text-xs text-zinc-400 mt-0.5">Side-by-side comparison of Raw IR vs. LLVM PassBuilder (<span id="irOptLabel" class="font-mono text-[#30D158]">-O3</span>).</p>
                         </div>
-                        <span id="irDiffBadge" class="px-3 py-1 text-xs font-mono rounded-lg bg-teal-500/10 text-teal-300 border border-teal-500/20">14 instructions eliminated</span>
+                        <span id="irDiffBadge" class="px-2.5 py-1 text-xs font-mono rounded-lg bg-white/[0.05] text-zinc-300 border border-white/[0.08]">14 instructions eliminated</span>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <!-- Raw IR (Left) -->
-                        <div class="bg-obsidian-950 rounded-2xl overflow-hidden border border-obsidian-800">
-                            <div class="px-5 py-3 bg-obsidian-900 border-b border-obsidian-800 flex items-center justify-between text-xs">
-                                <span class="font-mono text-amber-400 font-semibold"><i class="fa-solid fa-file-code mr-1.5"></i>Raw LLVM IR (Pre-Optimization)</span>
-                                <span id="rawIrLineCount" class="text-slate-500 font-mono text-[11px]">0 lines</span>
+                        <div class="bg-[#121215]/85 rounded-2xl overflow-hidden border border-white/[0.07] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
+                            <div class="px-4 py-2.5 bg-white/[0.02] border-b border-white/[0.06] flex items-center justify-between text-xs">
+                                <span class="font-mono text-zinc-300 font-medium"><i class="fa-solid fa-file-code mr-1.5 text-amber-400"></i>Raw LLVM IR (Pre-Optimization)</span>
+                                <span id="rawIrLineCount" class="text-zinc-500 font-mono text-[11px]">0 lines</span>
                             </div>
-                            <pre id="rawIrText" class="p-5 font-mono text-xs text-slate-300 leading-relaxed max-h-[500px] overflow-y-auto">; Compile code to generate LLVM IR</pre>
+                            <pre id="rawIrText" class="p-4 font-mono text-xs text-zinc-400 leading-relaxed max-h-[480px] overflow-y-auto">; Compile code to generate LLVM IR</pre>
                         </div>
 
                         <!-- Optimized IR (Right) -->
-                        <div class="bg-obsidian-950 rounded-2xl overflow-hidden border border-emerald-500/30">
-                            <div class="px-5 py-3 bg-obsidian-900 border-b border-emerald-500/20 flex items-center justify-between text-xs">
-                                <span class="font-mono text-emerald-400 font-semibold"><i class="fa-solid fa-bolt mr-1.5"></i>Optimized LLVM IR (Post-PassBuilder)</span>
-                                <span id="optIrLineCount" class="text-slate-500 font-mono text-[11px]">0 lines</span>
+                        <div class="bg-[#121215]/85 rounded-2xl overflow-hidden border border-white/[0.09] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
+                            <div class="px-4 py-2.5 bg-white/[0.04] border-b border-white/[0.06] flex items-center justify-between text-xs">
+                                <span class="font-mono text-[#F5F5F7] font-medium"><i class="fa-solid fa-bolt mr-1.5 text-[#30D158]"></i>Optimized LLVM IR (Post-PassBuilder)</span>
+                                <span id="optIrLineCount" class="text-zinc-500 font-mono text-[11px]">0 lines</span>
                             </div>
-                            <pre id="optIrText" class="p-5 font-mono text-xs text-emerald-300 leading-relaxed max-h-[500px] overflow-y-auto">; Optimized IR will appear here</pre>
+                            <pre id="optIrText" class="p-4 font-mono text-xs text-zinc-200 leading-relaxed max-h-[480px] overflow-y-auto">; Optimized IR will appear here</pre>
                         </div>
                     </div>
                 </div>
@@ -526,81 +578,81 @@
                 <!-- ------------------------------------------------ -->
                 <!-- TAB 6: ASSEMBLY & BINARY EMISSION                -->
                 <!-- ------------------------------------------------ -->
-                <div id="tab-asm" class="tab-pane hidden space-y-5">
+                <div id="tab-asm" class="tab-pane hidden space-y-4">
                     <div class="flex items-center justify-between">
                         <div>
-                            <h3 class="text-sm font-semibold text-slate-200">Native Target Machine Assembly</h3>
-                            <p class="text-xs text-slate-400 mt-0.5">Emitted machine target architecture: <span id="targetTripleLabel" class="font-mono text-cyan-400">host</span></p>
+                            <h3 class="text-sm font-semibold text-[#F5F5F7]">Native Target Machine Assembly</h3>
+                            <p class="text-xs text-zinc-400 mt-0.5">Emitted machine target architecture: <span id="targetTripleLabel" class="font-mono text-zinc-300">host</span></p>
                         </div>
-                        <div class="flex items-center space-x-2.5">
-                            <a href="/api/download/asm" class="px-3.5 py-2 bg-obsidian-850 hover:bg-obsidian-800 text-xs font-mono text-slate-200 border border-obsidian-700 rounded-lg flex items-center space-x-2 transition">
-                                <i class="fa-solid fa-download text-emerald-400"></i>
+                        <div class="flex items-center space-x-2">
+                            <a href="/api/download/asm" class="px-3 py-1.5 bg-white/[0.04] hover:bg-white/[0.08] text-xs font-mono text-zinc-200 border border-white/[0.07] rounded-lg flex items-center space-x-1.5 apple-transition">
+                                <i class="fa-solid fa-download text-zinc-400 text-xs"></i>
                                 <span>Download .s</span>
                             </a>
-                            <a href="/api/download/obj" class="px-3.5 py-2 bg-obsidian-850 hover:bg-obsidian-800 text-xs font-mono text-slate-200 border border-obsidian-700 rounded-lg flex items-center space-x-2 transition">
-                                <i class="fa-solid fa-file-binary text-cyan-400"></i>
+                            <a href="/api/download/obj" class="px-3 py-1.5 bg-white/[0.04] hover:bg-white/[0.08] text-xs font-mono text-zinc-200 border border-white/[0.07] rounded-lg flex items-center space-x-1.5 apple-transition">
+                                <i class="fa-solid fa-file-binary text-zinc-400 text-xs"></i>
                                 <span>Download .o</span>
                             </a>
                         </div>
                     </div>
 
                     <!-- Assembly Code Viewer -->
-                    <div class="bg-obsidian-950 rounded-2xl overflow-hidden border border-obsidian-800">
-                        <div class="px-5 py-3 bg-obsidian-900 border-b border-obsidian-800 flex items-center justify-between text-xs">
-                            <span class="font-mono text-slate-300 font-semibold"><i class="fa-solid fa-microchip mr-1.5 text-cyan-400"></i>Target x86_64 Assembly Code</span>
-                            <span id="asmLineCount" class="text-slate-500 font-mono text-[11px]">0 lines</span>
+                    <div class="bg-[#121215]/85 rounded-2xl overflow-hidden border border-white/[0.07] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
+                        <div class="px-4 py-2.5 bg-white/[0.02] border-b border-white/[0.06] flex items-center justify-between text-xs">
+                            <span class="font-mono text-zinc-300 font-medium"><i class="fa-solid fa-microchip mr-1.5 text-zinc-400"></i>Target Assembly Code</span>
+                            <span id="asmLineCount" class="text-zinc-500 font-mono text-[11px]">0 lines</span>
                         </div>
-                        <pre id="asmText" class="p-6 font-mono text-xs text-cyan-200 leading-relaxed max-h-[500px] overflow-y-auto">; Compile code to view target assembly</pre>
+                        <pre id="asmText" class="p-5 font-mono text-xs text-zinc-300 leading-relaxed max-h-[480px] overflow-y-auto">; Compile code to view target assembly</pre>
                     </div>
                 </div>
 
                 <!-- ------------------------------------------------ -->
                 <!-- TAB 7: TEST SUITE RUNNER                         -->
                 <!-- ------------------------------------------------ -->
-                <div id="tab-tests" class="tab-pane hidden space-y-6">
+                <div id="tab-tests" class="tab-pane hidden space-y-5">
                     <div class="flex items-center justify-between">
                         <div>
-                            <h3 class="text-sm font-semibold text-slate-200">Automated Correctness Test Suite</h3>
-                            <p class="text-xs text-slate-400 mt-0.5">Executes all 30 language tests in-memory to prove compiler correctness.</p>
+                            <h3 class="text-sm font-semibold text-[#F5F5F7]">Automated Correctness Test Suite</h3>
+                            <p class="text-xs text-zinc-400 mt-0.5">Executes all 30 language tests in-memory to prove compiler correctness.</p>
                         </div>
-                        <button id="runTestsBtn" onclick="runTestSuite()" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-obsidian-950 font-bold text-xs rounded-lg flex items-center space-x-2 transition">
-                            <i class="fa-solid fa-play"></i>
+                        <button id="runTestsBtn" onclick="runTestSuite()" class="px-3.5 py-1.5 bg-[#F5F5F7] hover:bg-white text-[#09090B] font-medium text-xs rounded-lg flex items-center space-x-1.5 apple-transition active:scale-[0.98]">
+                            <i class="fa-solid fa-play text-[10px]"></i>
                             <span>Execute 30 Tests</span>
                         </button>
                     </div>
 
                     <!-- Metrics Ribbon -->
-                    <div class="grid grid-cols-3 gap-5">
-                        <div class="bg-obsidian-950 p-5 rounded-2xl border border-obsidian-800">
-                            <span class="text-slate-400 text-xs uppercase tracking-wider font-medium">Total Test Cases</span>
-                            <span id="testTotalCount" class="text-2xl font-bold font-mono text-slate-200 block mt-1">30</span>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="bg-[#121215]/85 p-4 rounded-2xl border border-white/[0.07] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
+                            <span class="text-[#6E6E73] text-[11px] uppercase tracking-wider font-medium">Total Test Cases</span>
+                            <span id="testTotalCount" class="text-2xl font-semibold font-mono text-[#F5F5F7] block mt-1 tabular-numbers">30</span>
                         </div>
-                        <div class="bg-obsidian-950 p-5 rounded-2xl border border-obsidian-800">
-                            <span class="text-slate-400 text-xs uppercase tracking-wider font-medium">Passed</span>
-                            <span id="testPassedCount" class="text-2xl font-bold font-mono text-emerald-400 block mt-1">--</span>
+                        <div class="bg-[#121215]/85 p-4 rounded-2xl border border-white/[0.07] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
+                            <span class="text-[#6E6E73] text-[11px] uppercase tracking-wider font-medium">Passed</span>
+                            <span id="testPassedCount" class="text-2xl font-semibold font-mono text-[#30D158] block mt-1 tabular-numbers">--</span>
                         </div>
-                        <div class="bg-obsidian-950 p-5 rounded-2xl border border-obsidian-800">
-                            <span class="text-slate-400 text-xs uppercase tracking-wider font-medium">Failed</span>
-                            <span id="testFailedCount" class="text-2xl font-bold font-mono text-rose-400 block mt-1">--</span>
+                        <div class="bg-[#121215]/85 p-4 rounded-2xl border border-white/[0.07] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
+                            <span class="text-[#6E6E73] text-[11px] uppercase tracking-wider font-medium">Failed</span>
+                            <span id="testFailedCount" class="text-2xl font-semibold font-mono text-[#FF453A] block mt-1 tabular-numbers">--</span>
                         </div>
                     </div>
 
                     <!-- Tests Breakdown Table -->
-                    <div class="bg-obsidian-950 rounded-2xl overflow-hidden border border-obsidian-800 shadow-sm">
+                    <div class="bg-[#121215]/85 rounded-2xl overflow-hidden border border-white/[0.07] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08)]">
                         <table class="w-full text-left text-xs">
-                            <thead class="bg-obsidian-900 text-slate-400 font-mono uppercase text-[10px] border-b border-obsidian-800">
+                            <thead class="bg-white/[0.02] text-[#6E6E73] font-mono uppercase text-[10px] border-b border-white/[0.06]">
                                 <tr>
-                                    <th class="px-5 py-3">#</th>
-                                    <th class="px-5 py-3">Test Name</th>
-                                    <th class="px-5 py-3">Expected Result</th>
-                                    <th class="px-5 py-3">Actual Result</th>
-                                    <th class="px-5 py-3">Latency</th>
-                                    <th class="px-5 py-3">Status</th>
+                                    <th class="px-4 py-2.5">#</th>
+                                    <th class="px-4 py-2.5">Test Name</th>
+                                    <th class="px-4 py-2.5">Expected Result</th>
+                                    <th class="px-4 py-2.5">Actual Result</th>
+                                    <th class="px-4 py-2.5">Latency</th>
+                                    <th class="px-4 py-2.5">Status</th>
                                 </tr>
                             </thead>
-                            <tbody id="testTableBody" class="divide-y divide-obsidian-800 font-mono text-slate-300">
+                            <tbody id="testTableBody" class="divide-y divide-white/[0.05] font-mono text-zinc-300">
                                 <tr>
-                                    <td colspan="6" class="px-5 py-8 text-center text-slate-500">Click 'Execute 30 Tests' to run in-memory test suite.</td>
+                                    <td colspan="6" class="px-4 py-8 text-center text-zinc-500">Click 'Execute 30 Tests' to run in-memory test suite.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -612,73 +664,73 @@
     </main>
 
     <!-- ============================================================ -->
-    <!-- NEW SCRIPT MODAL (Templates & Custom Script Creation)        -->
+    <!-- NEW SCRIPT MODAL (Apple macOS Modal Sheet)                   -->
     <!-- ============================================================ -->
-    <div id="newScriptModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
-        <div class="bg-obsidian-900 border border-obsidian-700/80 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5">
-            <div class="flex items-center justify-between border-b border-obsidian-800 pb-3.5">
+    <div id="newScriptModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4">
+        <div class="bg-[#16161A]/95 border border-white/[0.1] rounded-2xl max-w-lg w-full p-5 shadow-2xl space-y-4 apple-transition">
+            <div class="flex items-center justify-between border-b border-white/[0.07] pb-3">
                 <div class="flex items-center space-x-2.5">
-                    <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                        <i class="fa-solid fa-file-circle-plus text-emerald-400 text-sm"></i>
+                    <div class="w-7 h-7 rounded-lg bg-white/[0.06] border border-white/[0.08] flex items-center justify-center">
+                        <i class="fa-solid fa-file-circle-plus text-zinc-300 text-xs"></i>
                     </div>
                     <div>
-                        <h3 class="text-sm font-bold text-white tracking-wide">Create New Simmer Script</h3>
-                        <p class="text-[11px] text-slate-400">Write custom algorithms, loops, conditions, and tests</p>
+                        <h3 class="text-sm font-semibold text-[#F5F5F7]">Create New Simmer Script</h3>
+                        <p class="text-[11px] text-zinc-400">Write custom algorithms, loops, conditions, and tests</p>
                     </div>
                 </div>
-                <button onclick="closeNewScriptModal()" class="text-slate-400 hover:text-white transition p-1">
+                <button onclick="closeNewScriptModal()" class="text-zinc-400 hover:text-white p-1 rounded-md apple-transition">
                     <i class="fa-solid fa-xmark text-sm"></i>
                 </button>
             </div>
             
             <div>
-                <label class="block text-xs font-semibold text-slate-300 mb-1.5 font-mono">Script Name</label>
+                <label class="block text-xs font-medium text-zinc-300 mb-1.5 font-mono">Script Name</label>
                 <div class="relative">
-                    <input type="text" id="newScriptFilename" value="my_algorithm.sim" class="w-full bg-obsidian-950 border border-obsidian-700 rounded-lg pl-3.5 pr-14 py-2 text-xs font-mono text-slate-100 focus:outline-none focus:border-emerald-500">
-                    <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-[11px] font-mono text-slate-500">.sim</span>
+                    <input type="text" id="newScriptFilename" value="my_algorithm.sim" class="w-full bg-[#09090C] border border-white/[0.08] rounded-lg pl-3 pr-12 py-1.5 text-xs font-mono text-[#F5F5F7] focus:outline-none focus:border-white/30">
+                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-mono text-zinc-500 select-none">.sim</span>
                 </div>
             </div>
 
             <div>
-                <label class="block text-xs font-semibold text-slate-300 mb-2">Choose Starter Template</label>
-                <div class="grid grid-cols-2 gap-2.5 text-xs" id="templatePickerGrid">
-                    <button type="button" onclick="selectTemplate('blank')" id="tmpl-blank" class="tmpl-card p-3 bg-obsidian-950 border-2 border-emerald-500 rounded-xl text-left transition space-y-1">
-                        <span class="font-bold text-slate-200 block text-xs flex items-center justify-between">
+                <label class="block text-xs font-medium text-zinc-300 mb-2">Choose Starter Template</label>
+                <div class="grid grid-cols-2 gap-2 text-xs" id="templatePickerGrid">
+                    <button type="button" onclick="selectTemplate('blank')" id="tmpl-blank" class="tmpl-card p-3 bg-white/[0.03] border border-white/20 rounded-xl text-left apple-transition space-y-1">
+                        <span class="font-medium text-[#F5F5F7] block text-xs flex items-center justify-between">
                             <span>Blank Canvas</span>
-                            <i class="fa-solid fa-circle-check text-emerald-400 text-xs"></i>
+                            <i class="fa-solid fa-circle-check text-[#30D158] text-xs"></i>
                         </span>
-                        <span class="text-[10px] text-slate-500 block leading-tight">Minimal script with variable declaration and return</span>
+                        <span class="text-[10px] text-zinc-400 block leading-tight">Minimal script with variable declaration and return</span>
                     </button>
-                    <button type="button" onclick="selectTemplate('while_loop')" id="tmpl-while_loop" class="tmpl-card p-3 bg-obsidian-950 border-2 border-obsidian-800 hover:border-obsidian-700 rounded-xl text-left transition space-y-1">
-                        <span class="font-bold text-slate-200 block text-xs flex items-center justify-between">
+                    <button type="button" onclick="selectTemplate('while_loop')" id="tmpl-while_loop" class="tmpl-card p-3 bg-white/[0.015] border border-white/[0.06] hover:border-white/15 rounded-xl text-left apple-transition space-y-1">
+                        <span class="font-medium text-zinc-300 block text-xs flex items-center justify-between">
                             <span>While Loop</span>
                         </span>
-                        <span class="text-[10px] text-slate-500 block leading-tight">Iteration counter with condition test</span>
+                        <span class="text-[10px] text-zinc-500 block leading-tight">Iteration counter with condition test</span>
                     </button>
-                    <button type="button" onclick="selectTemplate('for_loop')" id="tmpl-for_loop" class="tmpl-card p-3 bg-obsidian-950 border-2 border-obsidian-800 hover:border-obsidian-700 rounded-xl text-left transition space-y-1">
-                        <span class="font-bold text-slate-200 block text-xs flex items-center justify-between">
+                    <button type="button" onclick="selectTemplate('for_loop')" id="tmpl-for_loop" class="tmpl-card p-3 bg-white/[0.015] border border-white/[0.06] hover:border-white/15 rounded-xl text-left apple-transition space-y-1">
+                        <span class="font-medium text-zinc-300 block text-xs flex items-center justify-between">
                             <span>For Loop</span>
                         </span>
-                        <span class="text-[10px] text-slate-500 block leading-tight">Bounded range accumulation (from start to end)</span>
+                        <span class="text-[10px] text-zinc-500 block leading-tight">Bounded range accumulation (from start to end)</span>
                     </button>
-                    <button type="button" onclick="selectTemplate('if_else')" id="tmpl-if_else" class="tmpl-card p-3 bg-obsidian-950 border-2 border-obsidian-800 hover:border-obsidian-700 rounded-xl text-left transition space-y-1">
-                        <span class="font-bold text-slate-200 block text-xs flex items-center justify-between">
+                    <button type="button" onclick="selectTemplate('if_else')" id="tmpl-if_else" class="tmpl-card p-3 bg-white/[0.015] border border-white/[0.06] hover:border-white/15 rounded-xl text-left apple-transition space-y-1">
+                        <span class="font-medium text-zinc-300 block text-xs flex items-center justify-between">
                             <span>If-Else Branch</span>
                         </span>
-                        <span class="text-[10px] text-slate-500 block leading-tight">Multi-path relational decision tree</span>
+                        <span class="text-[10px] text-zinc-500 block leading-tight">Multi-path relational decision tree</span>
                     </button>
                 </div>
             </div>
 
-            <div class="flex items-center justify-end space-x-2.5 pt-3 border-t border-obsidian-800">
-                <button onclick="closeNewScriptModal()" class="px-4 py-2 text-xs font-medium text-slate-400 hover:text-white rounded-lg transition">Cancel</button>
-                <button onclick="confirmCreateNewScript()" class="px-5 py-2 text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-obsidian-950 rounded-lg shadow-lg transition">Create & Open</button>
+            <div class="flex items-center justify-end space-x-2 pt-3 border-t border-white/[0.07]">
+                <button onclick="closeNewScriptModal()" class="px-3 py-1.5 text-xs font-medium text-zinc-400 hover:text-white rounded-lg apple-transition">Cancel</button>
+                <button onclick="confirmCreateNewScript()" class="px-4 py-1.5 text-xs font-medium bg-[#F5F5F7] hover:bg-white text-[#09090B] rounded-lg shadow-sm apple-transition">Create & Open</button>
             </div>
         </div>
     </div>
 
     <!-- ============================================================ -->
-    <!-- APPLICATION JAVASCRIPT                                       -->
+    <!-- APPLICATION JAVASCRIPT (100% Zero-Regression Architecture)  -->
     <!-- ============================================================ -->
     <script>
         let currentOptLevel = 3;
@@ -739,10 +791,10 @@
             }
         }
 
-        function renderScriptSelector(selectedFilename = null) {
+        function renderScriptSelector(selectedIdOrFilename = null) {
             exampleSelector.innerHTML = '';
 
-            // Group 1: Custom Scripts
+            // Group 1: Custom User Scripts
             if (allCustomScripts.length > 0) {
                 const customGroup = document.createElement('optgroup');
                 customGroup.label = '✨ My Custom Scripts';
@@ -766,11 +818,11 @@
             });
             exampleSelector.appendChild(benchGroup);
 
-            // Select active
-            if (selectedFilename) {
+            // Select active option
+            if (selectedIdOrFilename) {
                 for (let i = 0; i < exampleSelector.options.length; i++) {
                     const opt = exampleSelector.options[i];
-                    if (opt.value.endsWith(selectedFilename) || opt.textContent.includes(selectedFilename)) {
+                    if (opt.value.includes(selectedIdOrFilename) || opt.textContent.includes(selectedIdOrFilename)) {
                         exampleSelector.selectedIndex = i;
                         break;
                     }
@@ -784,7 +836,6 @@
                 allExamples = await res.json();
                 renderScriptSelector();
 
-                // If user had custom scripts, load the latest custom script, else 05_fibonacci
                 if (allCustomScripts.length > 0) {
                     loadCustomScript(allCustomScripts[0]);
                 } else {
@@ -854,11 +905,11 @@
         function selectTemplate(key) {
             selectedTemplateKey = key;
             document.querySelectorAll('.tmpl-card').forEach(card => {
-                card.className = "tmpl-card p-3 bg-obsidian-950 border-2 border-obsidian-800 hover:border-obsidian-700 rounded-xl text-left transition space-y-1";
+                card.className = "tmpl-card p-3 bg-white/[0.015] border border-white/[0.06] hover:border-white/15 rounded-xl text-left apple-transition space-y-1";
             });
             const activeCard = document.getElementById(`tmpl-${key}`);
             if (activeCard) {
-                activeCard.className = "tmpl-card p-3 bg-obsidian-950 border-2 border-emerald-500 rounded-xl text-left transition space-y-1";
+                activeCard.className = "tmpl-card p-3 bg-white/[0.04] border border-white/20 rounded-xl text-left apple-transition space-y-1";
             }
         }
 
@@ -896,7 +947,6 @@
                 saveCustomScriptsToStorage();
                 showSaveSuccessBadge();
             } else {
-                // Save benchmark copy as custom script
                 const newName = prompt("Save as Custom Script name:", "my_" + filename);
                 if (!newName) return;
                 const cleanName = newName.endsWith('.sim') ? newName : newName + '.sim';
@@ -917,7 +967,7 @@
         function showSaveSuccessBadge() {
             const saveBtn = document.getElementById('saveScriptBtn');
             const originalHtml = saveBtn.innerHTML;
-            saveBtn.innerHTML = '<i class="fa-solid fa-check text-emerald-400"></i><span class="text-emerald-400 font-bold ml-1">Saved</span>';
+            saveBtn.innerHTML = '<i class="fa-solid fa-check text-[#30D158] text-[10px]"></i><span class="text-[#30D158] font-medium ml-1">Saved</span>';
             setTimeout(() => {
                 saveBtn.innerHTML = originalHtml;
             }, 1500);
@@ -975,7 +1025,7 @@
                 loadCustomScript(newScript);
             };
             reader.readAsText(file);
-            e.target.value = ''; // Reset input
+            e.target.value = '';
         }
 
         function exportCurrentSimFile() {
@@ -1016,96 +1066,6 @@
             });
         }
 
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.className = "tab-btn px-4 py-2.5 text-xs font-medium rounded-lg text-slate-400 hover:text-slate-200 hover:bg-obsidian-850 flex items-center space-x-2 transition";
-            });
-
-            const activeTab = document.getElementById(`tab-${tabId}`);
-            const activeBtn = document.getElementById(`tab-btn-${tabId}`);
-            if (activeTab) activeTab.classList.remove('hidden');
-            if (activeBtn) {
-                activeBtn.className = "tab-btn active px-4 py-2.5 text-xs font-semibold rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center space-x-2 transition";
-            }
-        }
-
-        function setOptLevel(level) {
-            currentOptLevel = level;
-            document.querySelectorAll('.opt-btn').forEach(btn => {
-                btn.className = "opt-btn px-2.5 py-1 rounded text-slate-400 hover:text-white transition text-xs font-mono";
-            });
-            const active = document.getElementById(`opt-${level}`);
-            if (active) {
-                active.className = "opt-btn px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-400 font-semibold border border-emerald-500/30 transition text-xs font-mono";
-            }
-            compileCurrentCode();
-        }
-
-        async function loadExamplesList() {
-            try {
-                const res = await fetch('/api/examples');
-                allExamples = await res.json();
-                exampleSelector.innerHTML = '<option value="" disabled>Select Benchmark Program...</option>';
-                allExamples.forEach(ex => {
-                    const opt = document.createElement('option');
-                    opt.value = ex.filename;
-                    opt.textContent = `${ex.filename} — ${ex.title}`;
-                    exampleSelector.appendChild(opt);
-                });
-
-                const defaultEx = allExamples.find(e => e.filename.includes('05_fibonacci')) || allExamples[0];
-                if (defaultEx) {
-                    loadExample(defaultEx);
-                    exampleSelector.value = defaultEx.filename;
-                }
-            } catch (err) {
-                console.error("Failed to fetch examples:", err);
-            }
-        }
-
-        exampleSelector.addEventListener('change', (e) => {
-            const ex = allExamples.find(item => item.filename === e.target.value);
-            if (ex) loadExample(ex);
-        });
-
-        function loadExampleByName(filename) {
-            const ex = allExamples.find(item => item.filename === filename);
-            if (ex) {
-                exampleSelector.value = filename;
-                loadExample(ex);
-            }
-        }
-
-        function loadExample(ex) {
-            codeEditor.value = ex.code;
-            currentFileName.textContent = ex.filename;
-            updateLineNumbers();
-            compileCurrentCode();
-        }
-
-        function setupEditorEvents() {
-            codeEditor.addEventListener('input', updateLineNumbers);
-            codeEditor.addEventListener('scroll', () => {
-                lineNumbers.scrollTop = codeEditor.scrollTop;
-            });
-
-            codeEditor.addEventListener('keydown', (e) => {
-                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                    e.preventDefault();
-                    compileCurrentCode();
-                }
-                if (e.key === 'Tab') {
-                    e.preventDefault();
-                    const start = codeEditor.selectionStart;
-                    const end = codeEditor.selectionEnd;
-                    codeEditor.value = codeEditor.value.substring(0, start) + '    ' + codeEditor.value.substring(end);
-                    codeEditor.selectionStart = codeEditor.selectionEnd = start + 4;
-                    updateLineNumbers();
-                }
-            });
-        }
-
         function updateLineNumbers() {
             const lines = codeEditor.value.split('\n');
             const count = lines.length;
@@ -1116,6 +1076,40 @@
         function copySourceCode() {
             navigator.clipboard.writeText(codeEditor.value);
             alert("Simmer source code copied to clipboard!");
+        }
+
+        function formatCodeSnippet() {
+            if (currentScriptObj && currentScriptObj.code) {
+                codeEditor.value = currentScriptObj.code;
+                updateLineNumbers();
+                compileCurrentCode();
+            }
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.className = "tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03] flex items-center space-x-2 apple-transition shrink-0";
+            });
+
+            const activeTab = document.getElementById(`tab-${tabId}`);
+            const activeBtn = document.getElementById(`tab-btn-${tabId}`);
+            if (activeTab) activeTab.classList.remove('hidden');
+            if (activeBtn) {
+                activeBtn.className = "tab-btn active px-3.5 py-1.5 rounded-lg text-xs font-medium bg-white/[0.09] text-white shadow-sm border border-white/[0.08] flex items-center space-x-2 apple-transition shrink-0";
+            }
+        }
+
+        function setOptLevel(level) {
+            currentOptLevel = level;
+            document.querySelectorAll('.opt-btn').forEach(btn => {
+                btn.className = "opt-btn px-2.5 py-1 rounded-md text-zinc-400 hover:text-zinc-200 apple-transition text-xs font-mono";
+            });
+            const active = document.getElementById(`opt-${level}`);
+            if (active) {
+                active.className = "opt-btn px-2.5 py-1 rounded-md bg-zinc-800 text-white shadow-sm border border-white/10 font-semibold apple-transition text-xs font-mono";
+            }
+            compileCurrentCode();
         }
 
         async function compileCurrentCode() {
@@ -1150,7 +1144,13 @@
                 errorBanner.classList.remove('hidden');
                 errorStageBadge.textContent = data.error_stage || 'Compilation Error';
                 errorMessage.textContent = data.error;
-                document.getElementById('terminalOutput').innerHTML = `<span class="text-rose-400 font-bold">✗ [${data.error_stage}]</span>\n${data.error}`;
+                document.getElementById('terminalOutput').innerHTML = `
+                    <div class="text-rose-400 font-medium flex items-center space-x-1.5">
+                        <i class="fa-solid fa-xmark text-xs"></i>
+                        <span>[${data.error_stage || 'ERROR'}] Compilation Failed</span>
+                    </div>
+                    <div class="text-rose-200/80 mt-1">${escapeHtml(data.error)}</div>
+                `;
                 return;
             } else {
                 errorBanner.classList.add('hidden');
@@ -1165,16 +1165,21 @@
             document.getElementById('kpiExitCode').textContent = data.jit_result ?? '--';
             document.getElementById('kpiLatency').textContent = data.total_time_ms ?? '0.0';
 
-            // Terminal Console
+            // Terminal Console (Authentic Apple Debug Console)
             const term = document.getElementById('terminalOutput');
-            let termHtml = `<span class="text-slate-500">// Simmer Compiler v1.2 Execution Log</span>\n`;
+            let termHtml = `<div class="text-zinc-500">// Simmer Compiler v1.2 Execution Log</div>\n`;
             if (data.stdout && data.stdout.length > 0) {
-                termHtml += `<span class="text-cyan-300">${escapeHtml(data.stdout)}</span>\n`;
+                termHtml += `<div class="text-zinc-300 my-1">${escapeHtml(data.stdout)}</div>\n`;
             }
-            termHtml += `<span class="text-emerald-400 font-bold">✓ Program exited with code: ${data.jit_result}</span>`;
+            termHtml += `
+                <div class="mt-1 font-medium text-[#30D158] flex items-center space-x-1.5">
+                    <i class="fa-solid fa-check text-xs"></i>
+                    <span>Program exited with code: ${data.jit_result}</span>
+                </div>
+            `;
             term.innerHTML = termHtml;
 
-            // Pipeline Stepper
+            // Pipeline Stepper (Apple Bento 4x2 Grid with full text & progress bars)
             renderPipelineTimeline(data.stages || []);
 
             // 2. Lexer Tokens Tab
@@ -1203,41 +1208,85 @@
             document.getElementById('targetTripleLabel').textContent = data.target_triple || 'host';
         }
 
+        // Apple Bento Pipeline Grid (Full descriptions with zero truncation)
         function renderPipelineTimeline(stages) {
             const container = document.getElementById('pipelineTimeline');
-            container.innerHTML = stages.map((s, idx) => `
-                <div class="p-3 bg-obsidian-900 rounded-xl border border-obsidian-800 flex flex-col justify-between hover:border-emerald-500/40 transition">
-                    <div class="flex items-center justify-between">
-                        <span class="text-[10px] text-emerald-400 font-mono font-bold uppercase">${idx + 1}. ${s.name}</span>
-                        <i class="fa-solid fa-check text-[10px] text-emerald-400"></i>
+            if (!stages || stages.length === 0) {
+                container.innerHTML = '<p class="text-xs text-zinc-500 font-mono col-span-full">No pipeline stages recorded.</p>';
+                return;
+            }
+
+            const maxTime = Math.max(...stages.map(s => parseFloat(s.time_ms) || 0.1), 1.0);
+
+            let cardsHtml = stages.map((s, idx) => {
+                const timeMs = parseFloat(s.time_ms) || 0;
+                const pct = Math.max(8, Math.min(100, Math.round((timeMs / maxTime) * 100)));
+                return `
+                    <div class="bg-white/[0.025] hover:bg-white/[0.045] border border-white/[0.06] rounded-xl p-3.5 apple-transition flex flex-col justify-between space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[11px] font-medium tracking-wider text-zinc-400 uppercase font-mono">${idx + 1}. ${s.name}</span>
+                            <i class="fa-solid fa-check text-[10px] text-[#30D158]"></i>
+                        </div>
+                        <div class="text-xs font-medium text-[#F5F5F7] leading-snug break-words">
+                            ${s.summary}
+                        </div>
+                        <div class="pt-1.5 border-t border-white/[0.04] space-y-1">
+                            <div class="flex items-center justify-between text-[11px] font-mono text-zinc-500">
+                                <span>Latency</span>
+                                <span class="text-zinc-300">${s.time_ms} ms</span>
+                            </div>
+                            <div class="w-full bg-white/[0.05] h-1 rounded-full overflow-hidden">
+                                <div class="bg-zinc-400 h-full rounded-full" style="width: ${pct}%"></div>
+                            </div>
+                        </div>
                     </div>
-                    <span class="text-slate-200 font-medium text-xs mt-2 truncate" title="${s.summary}">${s.summary}</span>
-                    <span class="text-[10px] text-slate-500 font-mono mt-1.5">${s.time_ms} ms</span>
-                </div>
-            `).join('');
+                `;
+            }).join('');
+
+            // If 7 stages, append an 8th summary bento card for a clean 4x2 grid
+            if (stages.length === 7) {
+                const totalStageTime = stages.reduce((acc, s) => acc + (parseFloat(s.time_ms) || 0), 0).toFixed(2);
+                cardsHtml += `
+                    <div class="bg-white/[0.04] border border-white/[0.09] rounded-xl p-3.5 apple-transition flex flex-col justify-between space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[11px] font-medium tracking-wider text-[#30D158] uppercase font-mono">Summary</span>
+                            <i class="fa-solid fa-circle-check text-[10px] text-[#30D158]"></i>
+                        </div>
+                        <div class="text-xs font-medium text-[#F5F5F7] leading-snug">
+                            All 7 pipeline stages executed cleanly to native machine target.
+                        </div>
+                        <div class="pt-1.5 border-t border-white/[0.04] flex items-center justify-between text-[11px] font-mono text-zinc-400">
+                            <span>Total Stage Time</span>
+                            <span class="text-[#F5F5F7] font-semibold">${totalStageTime} ms</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = cardsHtml;
         }
 
         function renderTokens(tokens) {
             const grid = document.getElementById('tokenGrid');
             if (!tokens || tokens.length === 0) {
-                grid.innerHTML = '<p class="text-xs text-slate-500 font-mono">No tokens generated.</p>';
+                grid.innerHTML = '<p class="text-xs text-zinc-500 font-mono">No tokens generated.</p>';
                 return;
             }
 
             const colorMap = {
-                'KEYWORD': 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-                'IDENTIFIER': 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
-                'NUMBER': 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-                'OPERATOR': 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-                'PUNCTUATION': 'bg-slate-500/10 text-slate-400 border-slate-500/20',
+                'KEYWORD': 'bg-purple-500/10 text-purple-300 border-purple-500/20',
+                'IDENTIFIER': 'bg-blue-500/10 text-blue-300 border-blue-500/20',
+                'NUMBER': 'bg-[#30D158]/10 text-[#30D158] border-[#30D158]/20',
+                'OPERATOR': 'bg-amber-500/10 text-amber-300 border-amber-500/20',
+                'PUNCTUATION': 'bg-white/[0.05] text-zinc-300 border-white/[0.08]',
             };
 
             grid.innerHTML = tokens.map((tok, i) => {
-                const color = colorMap[tok.type] || 'bg-slate-800 text-slate-300 border-obsidian-700';
+                const color = colorMap[tok.type] || 'bg-white/[0.04] text-zinc-300 border-white/[0.06]';
                 return `
-                    <div class="px-3 py-1.5 rounded-lg border ${color} font-mono text-xs flex items-center space-x-2 shadow-sm">
+                    <div class="px-2.5 py-1 rounded-md border ${color} font-mono text-xs flex items-center space-x-2">
                         <span class="text-[10px] opacity-40">${i}</span>
-                        <span class="font-bold text-slate-100">${escapeHtml(tok.value)}</span>
+                        <span class="font-medium text-[#F5F5F7]">${escapeHtml(tok.value)}</span>
                         <span class="text-[9px] uppercase tracking-wider opacity-60">${tok.type}</span>
                     </div>
                 `;
@@ -1253,7 +1302,7 @@
         function renderAstTree(node) {
             const root = document.getElementById('astTreeRoot');
             if (!node) {
-                root.innerHTML = '<p class="text-xs text-slate-500 font-mono">No AST available.</p>';
+                root.innerHTML = '<p class="text-xs text-zinc-500 font-mono">No AST available.</p>';
                 return;
             }
             root.innerHTML = buildAstNodeHtml(node);
@@ -1261,28 +1310,16 @@
 
         function buildAstNodeHtml(node) {
             if (!node) return '';
-            const badgeColorMap = {
-                'blue': 'bg-blue-500/15 text-blue-300 border-blue-500/30',
-                'amber': 'bg-amber-500/15 text-amber-300 border-amber-500/30',
-                'emerald': 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
-                'purple': 'bg-purple-500/15 text-purple-300 border-purple-500/30',
-                'rose': 'bg-rose-500/15 text-rose-300 border-rose-500/30',
-                'teal': 'bg-teal-500/15 text-teal-300 border-teal-500/30',
-                'cyan': 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30',
-                'sky': 'bg-sky-500/15 text-sky-300 border-sky-500/30',
-            };
-            const badgeClass = badgeColorMap[node.badgeColor] || 'bg-obsidian-800 text-slate-400 border-obsidian-700';
-
             const hasChildren = node.children && node.children.length > 0;
             const childrenHtml = hasChildren ? node.children.map(buildAstNodeHtml).join('') : '';
 
             return `
                 <div class="ast-branch font-mono text-xs">
-                    <div class="inline-flex items-center space-x-2.5 py-1.5 px-3 rounded-xl bg-obsidian-900 border border-obsidian-800 hover:border-obsidian-700 transition">
-                        <span class="text-slate-200 font-medium">${escapeHtml(node.label || node.type)}</span>
-                        ${node.badge ? `<span class="text-[10px] px-2 py-0.5 rounded border font-semibold ${badgeClass}">${escapeHtml(node.badge)}</span>` : ''}
+                    <div class="inline-flex items-center space-x-2 py-1 px-2.5 rounded-lg bg-white/[0.03] border border-white/[0.06] hover:border-white/[0.12] apple-transition">
+                        <span class="text-zinc-200 font-medium">${escapeHtml(node.label || node.type)}</span>
+                        ${node.badge ? `<span class="text-[10px] px-1.5 py-0.2 rounded bg-white/[0.06] text-zinc-300 border border-white/[0.08] font-mono">${escapeHtml(node.badge)}</span>` : ''}
                     </div>
-                    ${hasChildren ? `<div class="mt-1.5">${childrenHtml}</div>` : ''}
+                    ${hasChildren ? `<div class="mt-1">${childrenHtml}</div>` : ''}
                 </div>
             `;
         }
@@ -1299,16 +1336,16 @@
         function renderSymbolTable(symbols) {
             const grid = document.getElementById('symbolTableGrid');
             if (!symbols || symbols.length === 0) {
-                grid.innerHTML = '<p class="text-xs text-slate-500 font-mono col-span-full">No declared variables in current scope.</p>';
+                grid.innerHTML = '<p class="text-xs text-zinc-500 font-mono col-span-full">No declared variables in current scope.</p>';
                 return;
             }
             grid.innerHTML = symbols.map(sym => `
-                <div class="p-4 bg-obsidian-900 rounded-xl border border-obsidian-800 flex items-center justify-between font-mono text-xs">
-                    <div class="flex items-center space-x-2.5">
-                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
-                        <span class="text-slate-100 font-semibold">${sym}</span>
+                <div class="p-3.5 bg-white/[0.03] rounded-xl border border-white/[0.06] flex items-center justify-between font-mono text-xs">
+                    <div class="flex items-center space-x-2">
+                        <span class="w-2 h-2 rounded-full bg-[#30D158]"></span>
+                        <span class="text-[#F5F5F7] font-medium">${sym}</span>
                     </div>
-                    <span class="text-[10px] text-slate-500 uppercase font-mono">i32</span>
+                    <span class="text-[10px] text-zinc-500 uppercase font-mono">i32</span>
                 </div>
             `).join('');
         }
@@ -1319,7 +1356,7 @@
             btn.classList.add('opacity-75');
 
             const tbody = document.getElementById('testTableBody');
-            tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-cyan-400 font-mono"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Running in-memory test suite...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-8 text-center text-zinc-400 font-mono"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Running in-memory test suite...</td></tr>';
 
             try {
                 const res = await fetch('/api/run-tests', { method: 'POST' });
@@ -1332,14 +1369,14 @@
                 tbody.innerHTML = data.results.map((t, idx) => {
                     const isPass = t.status === 'pass';
                     return `
-                        <tr class="hover:bg-obsidian-850/50 transition">
-                            <td class="px-5 py-3 text-slate-500">${idx + 1}</td>
-                            <td class="px-5 py-3 font-medium text-slate-200">${escapeHtml(t.name)}</td>
-                            <td class="px-5 py-3 text-slate-400">${t.expected}</td>
-                            <td class="px-5 py-3 ${isPass ? 'text-emerald-400' : 'text-rose-400'} font-bold">${t.actual}</td>
-                            <td class="px-5 py-3 text-slate-500 text-[11px]">${t.time_ms} ms</td>
-                            <td class="px-5 py-3">
-                                <span class="px-2.5 py-1 rounded text-[10px] font-bold uppercase ${isPass ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'}">
+                        <tr class="hover:bg-white/[0.02] apple-transition">
+                            <td class="px-4 py-2.5 text-zinc-500">${idx + 1}</td>
+                            <td class="px-4 py-2.5 font-medium text-zinc-200">${escapeHtml(t.name)}</td>
+                            <td class="px-4 py-2.5 text-zinc-400">${t.expected}</td>
+                            <td class="px-4 py-2.5 ${isPass ? 'text-[#30D158]' : 'text-[#FF453A]'} font-semibold">${t.actual}</td>
+                            <td class="px-4 py-2.5 text-zinc-500 text-[11px]">${t.time_ms} ms</td>
+                            <td class="px-4 py-2.5">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-medium uppercase font-mono ${isPass ? 'bg-[#30D158]/10 text-[#30D158] border border-[#30D158]/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}">
                                     ${isPass ? '✓ PASS' : '✗ FAIL'}
                                 </span>
                             </td>
@@ -1347,7 +1384,7 @@
                     `;
                 }).join('');
             } catch (err) {
-                tbody.innerHTML = `<tr><td colspan="6" class="px-5 py-4 text-rose-400 font-mono">Failed to run test suite: ${err.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-4 text-rose-400 font-mono">Failed to run test suite: ${err.message}</td></tr>`;
             } finally {
                 btn.disabled = false;
                 btn.classList.remove('opacity-75');
