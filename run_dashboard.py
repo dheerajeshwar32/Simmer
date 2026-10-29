@@ -100,7 +100,11 @@ def main():
     print(f"  {DIM}  Press Ctrl+C in terminal to stop server{RESET}\n")
 
     try:
-        app.run(host="127.0.0.1", port=port, debug=False)
+        try:
+            from waitress import serve
+            serve(app, host="127.0.0.1", port=port, _quiet=True)
+        except ImportError:
+            app.run(host="127.0.0.1", port=port, debug=False)
     except KeyboardInterrupt:
         print(f"\n  {YELLOW}Simmer Studio shutdown cleanly.{RESET}\n")
 

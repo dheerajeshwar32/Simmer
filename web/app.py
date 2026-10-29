@@ -64,6 +64,9 @@ def add_no_cache_headers(response):
 
 @app.route('/favicon.ico')
 def favicon():
+    fav_ico = os.path.join(os.path.dirname(__file__), "static", "favicon.ico")
+    if os.path.exists(fav_ico):
+        return send_file(fav_ico, mimetype='image/x-icon')
     fav_path = os.path.join(os.path.dirname(__file__), "static", "favicon.svg")
     return send_file(fav_path, mimetype='image/svg+xml')
 

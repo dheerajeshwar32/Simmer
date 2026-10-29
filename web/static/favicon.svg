@@ -1,32 +1,47 @@
 <svg width="64" height="64" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="32" height="32" rx="9" fill="url(#bgGrad)"/>
-  <rect x="0.5" y="0.5" width="31" height="31" rx="8.5" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
   <defs>
-    <linearGradient id="bgGrad" x1="16" y1="0" x2="16" y2="32" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#27272A"/>
-      <stop offset="50%" stop-color="#18181B"/>
-      <stop offset="100%" stop-color="#09090B"/>
+    <!-- 3D Royal Ultramarine Jewel Gradient -->
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6366F1"/>
+      <stop offset="50%" stop-color="#4F46E5"/>
+      <stop offset="100%" stop-color="#1D4ED8"/>
     </linearGradient>
+    <radialGradient id="specular" cx="25%" cy="20%" r="60%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </radialGradient>
     <linearGradient id="simmerArcTop" x1="6" y1="6" x2="18" y2="14" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#FFFFFF"/>
-      <stop offset="100%" stop-color="#D4D4D8"/>
+      <stop offset="100%" stop-color="#E0E7FF"/>
     </linearGradient>
     <linearGradient id="simmerArcBottom" x1="18" y1="18" x2="6" y2="10" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#E4E4E7"/>
-      <stop offset="100%" stop-color="#71717A"/>
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#C7D2FE"/>
     </linearGradient>
+    <filter id="jewelShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="1" stdDeviation="0.75" flood-color="#0F172A" flood-opacity="0.3"/>
+    </filter>
   </defs>
-  <g transform="translate(4, 4) skewX(-6)">
+  
+  <!-- Base Jewel Squircle -->
+  <rect width="32" height="32" rx="9" fill="url(#bgGrad)"/>
+  <!-- Specular Sheen -->
+  <rect width="32" height="32" rx="9" fill="url(#specular)"/>
+  <!-- Polished Chamfer Border -->
+  <rect x="0.5" y="0.5" width="31" height="31" rx="8.5" stroke="#FFFFFF" stroke-opacity="0.35" stroke-width="1"/>
+  
+  <!-- Aerodynamic Interlocking S-Loop -->
+  <g transform="translate(4, 4) skewX(-6)" filter="url(#jewelShadow)">
     <path 
       d="M 16.5 6.8 H 10.1 A 3.35 3.35 0 0 0 10.1 13.5 H 13.8" 
       stroke="url(#simmerArcTop)" 
-      stroke-width="2.4" 
+      stroke-width="2.5" 
       stroke-linecap="round" 
     />
     <path 
       d="M 7.5 17.2 H 13.9 A 3.35 3.35 0 0 0 13.9 10.5 H 10.2" 
       stroke="url(#simmerArcBottom)" 
-      stroke-width="2.4" 
+      stroke-width="2.5" 
       stroke-linecap="round" 
     />
   </g>
