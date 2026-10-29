@@ -93,6 +93,12 @@ def main():
     if not args.no_browser:
         threading.Thread(target=open_browser_delayed, args=(url,), daemon=True).start()
 
+    from flask import cli
+    cli.show_server_banner = lambda *args: None
+
+    print(f"  {GREEN}✓ Simmer Engine Live :{RESET} {BOLD}{url}{RESET}")
+    print(f"  {DIM}  Press Ctrl+C in terminal to stop server{RESET}\n")
+
     try:
         app.run(host="127.0.0.1", port=port, debug=False)
     except KeyboardInterrupt:
