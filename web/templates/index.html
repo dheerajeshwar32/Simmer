@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simmer Studio 1.2 — LLVM Compiler Workbench</title>
+    
+    <!-- Favicon: Multi-resolution Apple & Chrome Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
+    <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fonts: Plus Jakarta Sans (Brandmark), Inter, SF Mono, JetBrains Mono, Fira Code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Free/Pro Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['-apple-system', 'BlinkMacSystemFont', 'SF Pro Display', 'SF Pro Text', 'Inter', 'sans-serif'],
+                        mono: ['SF Mono', 'JetBrains Mono', 'Fira Code', 'monospace'],
+                    },
+                    colors: {
+                        alabaster: '#F5F5F7',
+                        obsidian: '#0F172A',
+                        subtleText: '#515154',
+                        mutedText: '#86868B',
+                        recessed: '#EFEFF4',
+                        appleGreen: '#28CD41',
+                        appleMint: '#059669',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        :root {
+            --apple-bezier: cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        
+        body {
+            background-color: #F4F6FB;
+            color: #0F172A;
+            overflow-x: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Apple Daylight Elevation Card */
+        .daylight-card {
+            background: #FFFFFF;
+            border: 1px solid #E2E8F0;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 4px 16px rgba(15, 23, 42, 0.02), inset 0 1px 0 rgba(255, 255, 255, 1);
+        }
+
+        /* Bespoke Apple Pro Brandmark Typography */
+        .simmer-brandmark-text {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Plus Jakarta Sans', sans-serif;
+            font-weight: 700;
+            letter-spacing: -0.028em;
+            background: linear-gradient(180deg, #0F172A 0%, #334155 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+        }
+
+        /* Authentic macOS Subtle Light Scrollbar */
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 0, 0, 0.28);
+        }
+
+        /* Tabular numbers for clean numeric telemetry */
+        .tabular-numbers {
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* AST Visual Tree Branch Styling (Daylight) */
+        .ast-branch {
+            position: relative;
+            padding-left: 1.25rem;
+            margin-left: 0.75rem;
+            border-left: 1px solid rgba(0, 0, 0, 0.08);
+        }
+        .ast-branch::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0.875rem;
+            width: 0.875rem;
+            height: 1px;
+            background: rgba(0, 0, 0, 0.08);
+        }
+        .ast-branch:last-child {
+            border-left-color: transparent;
+        }
+        .ast-branch:last-child::before {
+            border-left: 1px solid rgba(0, 0, 0, 0.08);
+            height: 0.875rem;
+            top: 0;
+        }
+
+        /* Smooth Apple transition */
+        .apple-transition {
+            transition: all 150ms cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        /* Hide scrollbars for pill strips */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans antialiased text-[#0F172A] bg-[#F4F6FB] selection:bg-[#C7D2FE] w-full max-w-[100vw] overflow-x-hidden box-border">
+
+    <!-- ============================================================ -->
+    <!-- UNIFIED macOS TOOLBAR (Daylight Alabaster Top Navigation)    -->
+    <!-- ============================================================ -->
+    <header class="h-14 border-b border-[#E2E8F0] bg-white/90 backdrop-blur-xl px-4 flex items-center justify-between z-50 shrink-0 gap-2">
+        
+        <!-- Left: 3D Royal Ultramarine Jewel Squircle & Apple Wordmark -->
+        <div class="flex items-center space-x-3 shrink-0 group cursor-pointer" onclick="loadExampleByName('05_fibonacci.sim')">
+            <!-- 3D Royal Ultramarine Jewel Squircle -->
+            <div class="relative flex items-center justify-center w-8 h-8 rounded-[9px] bg-gradient-to-br from-[#6366F1] via-[#4F46E5] to-[#1D4ED8] shadow-[0_3px_10px_rgba(79,70,229,0.35),0_1px_2px_rgba(37,99,235,0.2),inset_0_1px_0_rgba(255,255,255,0.4)] border border-[#4338CA]/60 shrink-0 select-none overflow-hidden group">
+                <!-- Liquid glass specular highlight -->
+                <div class="absolute inset-0 bg-[radial-gradient(circle_at_25%_20%,rgba(255,255,255,0.35),transparent_60%)] pointer-events-none"></div>
+                
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="-skew-x-6 drop-shadow-[0_1px_2px_rgba(15,23,42,0.25)]">
+                    <defs>
+                        <linearGradient id="simmerArcTop" x1="6" y1="6" x2="18" y2="14" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#FFFFFF" />
+                            <stop offset="100%" stop-color="#E0E7FF" />
+                        </linearGradient>
+                        <linearGradient id="simmerArcBottom" x1="18" y1="18" x2="6" y2="10" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#FFFFFF" />
+                            <stop offset="100%" stop-color="#C7D2FE" />
+                        </linearGradient>
+                    </defs>
+                    <!-- Upper Precision Loop -->
+                    <path 
+                        d="M 16.5 6.8 H 10.1 A 3.35 3.35 0 0 0 10.1 13.5 H 13.8" 
+                        stroke="url(#simmerArcTop)" 
+                        stroke-width="2.4" 
+                        stroke-linecap="round" 
+                    />
+                    <!-- Lower Interlocking Loop -->
+                    <path 
+                        d="M 7.5 17.2 H 13.9 A 3.35 3.35 0 0 0 13.9 10.5 H 10.2" 
+                        stroke="url(#simmerArcBottom)" 
+                        stroke-width="2.4" 
+                        stroke-linecap="round" 
+                    />
+                </svg>
+            </div>
+            
+            <!-- Brand Wordmark & Architecture Lockup -->
+            <div class="flex items-center space-x-2">
+                <span class="simmer-brandmark-text text-[17px] select-none font-bold tracking-tight">Simmer</span>
+                <span class="bg-[#EEF2F6] text-[#4338CA] border border-[#C7D2FE]/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_1px_2px_rgba(79,70,229,0.06)] rounded-full px-2.5 py-0.5 text-[10.5px] font-semibold tracking-tight font-sans">Studio 1.2</span>
+                <div class="h-3.5 w-[1px] bg-[#E2E8F0] hidden xl:inline"></div>
+                <span class="text-[11px] font-medium text-[#64748B] tracking-tight hidden xl:inline font-sans">LLVM Engine</span>
+            </div>
+        </div>
+
+        <!-- Center: File Selector & Actions (Clean Porcelain Recessed Pill Container) -->
+        <div class="flex items-center space-x-1 mx-2 min-w-0 max-w-[340px] flex-shrink w-full">
+            <div class="bg-[#F1F5F9] rounded-lg p-1 border border-[#E2E8F0] text-[#0F172A] flex items-center space-x-1 w-full shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)]">
+                <!-- Dropdown -->
+                <div class="relative flex-1 min-w-0">
+                    <i class="fa-solid fa-code absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] text-[#64748B] pointer-events-none"></i>
+                    <select id="exampleSelector" class="w-full bg-transparent hover:bg-white hover:shadow-xs text-xs text-[#0F172A] pl-7 pr-6 py-1 rounded-md border-0 focus:outline-none cursor-pointer appearance-none truncate font-mono apple-transition font-medium">
+                        <option value="" disabled selected>Loading scripts...</option>
+                    </select>
+                    <i class="fa-solid fa-chevron-down absolute right-2.5 top-1/2 -translate-y-1/2 text-[9px] text-[#64748B] pointer-events-none"></i>
+                </div>
+
+                <!-- Divider -->
+                <div class="h-4 w-px bg-[#CBD5E1] shrink-0"></div>
+
+                <!-- New Script Button -->
+                <button onclick="openNewScriptModal()" title="Create New Script" class="px-2 py-1 text-xs text-[#334155] hover:text-[#0F172A] hover:bg-white hover:shadow-xs rounded-md flex items-center space-x-1 apple-transition shrink-0 font-medium">
+                    <i class="fa-solid fa-plus text-[10px]"></i>
+                    <span class="hidden sm:inline">New</span>
+                </button>
+
+                <!-- Save Custom Script Button -->
+                <button onclick="saveCurrentScript()" id="saveScriptBtn" title="Save Script to My Custom Library (Ctrl+S)" class="px-2 py-1 text-xs text-[#334155] hover:text-[#0F172A] hover:bg-white hover:shadow-xs rounded-md flex items-center space-x-1 apple-transition shrink-0 font-medium">
+                    <i class="fa-regular fa-floppy-disk text-[10px]"></i>
+                    <span class="hidden sm:inline">Save</span>
+                </button>
+
+                <!-- Divider -->
+                <div class="h-4 w-px bg-[#CBD5E1] shrink-0"></div>
+
+                <!-- Import .sim file button -->
+                <button onclick="document.getElementById('fileImporter').click()" title="Open .sim file from computer" class="p-1.5 text-xs text-[#64748B] hover:text-[#0F172A] hover:bg-white hover:shadow-xs rounded-md apple-transition shrink-0">
+                    <i class="fa-solid fa-folder-open text-[11px]"></i>
+                </button>
+                <input type="file" id="fileImporter" accept=".sim,.txt" onchange="handleFileImport(event)" class="hidden">
+
+                <!-- Export .sim file button -->
+                <button onclick="exportCurrentSimFile()" title="Download current .sim file" class="p-1.5 text-xs text-[#64748B] hover:text-[#0F172A] hover:bg-white hover:shadow-xs rounded-md apple-transition shrink-0">
+                    <i class="fa-solid fa-arrow-down-to-bracket text-[11px]"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Right: PassBuilder Segmented Control & Primary CTA -->
+        <div class="flex items-center space-x-2 shrink-0">
+            
+            <!-- Recessed Silver Track for PassBuilder -->
+            <div class="flex items-center bg-[#EEF2F6] p-0.5 rounded-lg border border-[#E2E8F0] shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)] text-xs">
+                <span class="text-[#64748B] px-2 text-[11px] font-medium hidden sm:inline select-none">PassBuilder:</span>
+                <button onclick="setOptLevel(0)" id="opt-0" class="opt-btn px-2.5 py-1 rounded-md text-[#64748B] hover:text-[#0F172A] apple-transition text-xs font-mono">-O0</button>
+                <button onclick="setOptLevel(1)" id="opt-1" class="opt-btn px-2.5 py-1 rounded-md text-[#64748B] hover:text-[#0F172A] apple-transition text-xs font-mono">-O1</button>
+                <button onclick="setOptLevel(2)" id="opt-2" class="opt-btn px-2.5 py-1 rounded-md text-[#64748B] hover:text-[#0F172A] apple-transition text-xs font-mono">-O2</button>
+                <button onclick="setOptLevel(3)" id="opt-3" class="opt-btn px-2.5 py-1 rounded-md bg-white text-[#312E81] font-semibold shadow-[0_1px_3px_rgba(79,70,229,0.12)] border border-[#6366F1]/20 apple-transition text-xs font-mono">-O3</button>
+            </div>
+
+            <!-- 30 Tests Button -->
+            <button onclick="switchTab('tests'); runTestSuite();" class="px-2.5 py-1 text-xs font-medium text-[#0F172A] bg-[#EEF2F6] hover:bg-[#E2E8F0] border border-[#CBD5E1] rounded-lg flex items-center space-x-1.5 apple-transition">
+                <i class="fa-solid fa-flask-vial text-[#4F46E5] text-[11px]"></i>
+                <span class="hidden sm:inline">30 Tests</span>
+            </button>
+
+            <!-- High-Contrast Apple / Stripe Ultramarine Primary CTA -->
+            <button id="compileBtn" onclick="compileCurrentCode()" class="bg-gradient-to-b from-[#4F46E5] to-[#3B82F6] hover:from-[#4338CA] hover:to-[#2563EB] text-white font-medium text-xs px-3.5 py-1.5 rounded-lg shadow-[0_2px_10px_rgba(79,70,229,0.28),inset_0_1px_0_rgba(255,255,255,0.25)] border border-[#4338CA]/50 apple-transition active:scale-[0.98] flex items-center space-x-2">
+                <i class="fa-solid fa-play text-[10px] text-white/90"></i>
+                <span class="font-medium tracking-tight">Compile & Run</span>
+                <kbd class="hidden md:inline-block text-[10px] bg-white/20 text-white border border-white/20 px-1.5 py-0.5 rounded font-mono ml-0.5 font-medium">Ctrl+↵</kbd>
+            </button>
+        </div>
+    </header>
+
+    <!-- ============================================================ -->
+    <!-- MAIN WORKSPACE: 2-Pane Split (Xcode Light Environment)        -->
+    <!-- ============================================================ -->
+    <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden h-[calc(100vh-3.5rem)]">
+        
+        <!-- -------------------------------------------------------- -->
+        <!-- LEFT PANE: Xcode Light Source Editor (5 cols on lg)      -->
+        <!-- -------------------------------------------------------- -->
+        <section class="lg:col-span-5 border-r border-[#E2E8F0] flex flex-col bg-white h-full overflow-hidden">
+            
+            <!-- Editor Header Bar -->
+            <div class="px-4 py-2.5 bg-[#FAFAFC] border-b border-black/[0.06] flex items-center justify-between text-xs shrink-0">
+                <div class="flex items-center space-x-2">
+                    <span class="w-2 h-2 rounded-full bg-[#28CD41] inline-block shadow-[0_0_6px_rgba(40,205,65,0.4)]"></span>
+                    <div class="flex items-center space-x-1.5 cursor-pointer group" onclick="renameCurrentScript()" title="Click to rename script">
+                        <span id="currentFileName" class="font-mono text-[#0F172A] font-semibold text-xs group-hover:text-black transition">05_fibonacci.sim</span>
+                        <i class="fa-solid fa-pen text-[9px] text-[#64748B] group-hover:text-[#0F172A] transition"></i>
+                    </div>
+                    <span id="customScriptBadge" class="hidden text-[10px] px-1.5 py-0.2 rounded bg-[#EFEFF4] text-[#475569] border border-[#E2E8F0] font-mono">Custom</span>
+                    <span id="codeLengthBadge" class="text-[#64748B] font-mono text-[11px]">(16 lines)</span>
+                </div>
+                <div class="flex items-center space-x-1 text-[#475569] text-xs">
+                    <button id="deleteScriptBtn" onclick="deleteCurrentScript()" title="Delete this custom script" class="hidden hover:text-rose-600 p-1.5 rounded hover:bg-black/[0.05] apple-transition">
+                        <i class="fa-regular fa-trash-can text-xs"></i>
+                    </button>
+                    <button onclick="saveCurrentScript()" title="Save (Ctrl+S)" class="hover:text-[#0F172A] p-1.5 rounded hover:bg-black/[0.05] apple-transition">
+                        <i class="fa-regular fa-floppy-disk text-xs"></i>
+                    </button>
+                    <button onclick="formatCodeSnippet()" title="Reset snippet" class="hover:text-[#0F172A] p-1.5 rounded hover:bg-black/[0.05] apple-transition">
+                        <i class="fa-solid fa-rotate-right text-xs"></i>
+                    </button>
+                    <button onclick="copySourceCode()" title="Copy Code" class="hover:text-[#0F172A] p-1.5 rounded hover:bg-black/[0.05] apple-transition">
+                        <i class="fa-regular fa-copy text-xs"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Presets Bar (Clean Porcelain Chips, 100% Fit Without Clipping) -->
+            <div class="px-3 py-1.5 bg-[#F8F8FA] border-b border-black/[0.05] flex items-center flex-wrap gap-1 text-[11px] shrink-0">
+                <span class="text-[#64748B] text-[10px] font-semibold uppercase tracking-wider mr-0.5 shrink-0">Presets:</span>
+                <button onclick="loadExampleByName('05_fibonacci.sim')" class="bg-white hover:bg-[#F2F2F7] text-[#3A3A3C] border border-[#E2E8F0] shadow-[0_1px_1px_rgba(0,0,0,0.03)] rounded-full px-2 py-0.5 apple-transition whitespace-nowrap text-[11px] font-medium">Fibonacci</button>
+                <button onclick="loadExampleByName('07_prime_check.sim')" class="bg-white hover:bg-[#F2F2F7] text-[#3A3A3C] border border-[#E2E8F0] shadow-[0_1px_1px_rgba(0,0,0,0.03)] rounded-full px-2 py-0.5 apple-transition whitespace-nowrap text-[11px] font-medium">Prime Check</button>
+                <button onclick="loadExampleByName('13_collatz.sim')" class="bg-white hover:bg-[#F2F2F7] text-[#3A3A3C] border border-[#E2E8F0] shadow-[0_1px_1px_rgba(0,0,0,0.03)] rounded-full px-2 py-0.5 apple-transition whitespace-nowrap text-[11px] font-medium">Collatz 27</button>
+                <button onclick="loadExampleByName('06_factorial.sim')" class="bg-white hover:bg-[#F2F2F7] text-[#3A3A3C] border border-[#E2E8F0] shadow-[0_1px_1px_rgba(0,0,0,0.03)] rounded-full px-2 py-0.5 apple-transition whitespace-nowrap text-[11px] font-medium">Factorial 6!</button>
+                <button onclick="loadExampleByName('08_gcd.sim')" class="bg-white hover:bg-[#F2F2F7] text-[#3A3A3C] border border-[#E2E8F0] shadow-[0_1px_1px_rgba(0,0,0,0.03)] rounded-full px-2 py-0.5 apple-transition whitespace-nowrap text-[11px] font-medium">GCD</button>
+                <button onclick="loadExampleByName('09_for_loop.sim')" class="bg-white hover:bg-[#F2F2F7] text-[#3A3A3C] border border-[#E2E8F0] shadow-[0_1px_1px_rgba(0,0,0,0.03)] rounded-full px-2 py-0.5 apple-transition whitespace-nowrap text-[11px] font-medium">For Loop</button>
+                <button onclick="loadExampleByName('10_print_demo.sim')" class="bg-white hover:bg-[#F2F2F7] text-[#3A3A3C] border border-[#E2E8F0] shadow-[0_1px_1px_rgba(0,0,0,0.03)] rounded-full px-2 py-0.5 apple-transition whitespace-nowrap text-[11px] font-medium">Print</button>
+            </div>
+
+            <!-- Code Editor Area with Real Xcode Light Live Syntax Coloring -->
+            <div class="flex-1 flex overflow-hidden relative bg-white">
+                <!-- Line Numbers (Xcode Gutter in #FAFAFC with #AEAEB2) -->
+                <div id="lineNumbers" class="w-11 py-3.5 select-none bg-[#FAFAFC] text-right pr-2.5 font-mono text-xs text-[#AEAEB2] border-r border-black/[0.05] leading-6 overflow-hidden shrink-0">
+                    1
+                </div>
+                <!-- Dual-Layer Synchronized Editor (Pre Backdrop for Coloring + Transparent Textarea for Editing) -->
+                <div class="relative flex-1 h-full overflow-hidden">
+                    <pre id="syntaxBackdrop" aria-hidden="true" class="absolute inset-0 m-0 p-3.5 font-mono text-xs leading-6 whitespace-pre overflow-hidden pointer-events-none select-none text-[#0F172A]"></pre>
+                    <textarea id="codeEditor" spellcheck="false" class="absolute inset-0 w-full h-full m-0 p-3.5 bg-transparent text-transparent caret-[#4F46E5] font-mono text-xs leading-6 resize-none focus:outline-none overflow-auto whitespace-pre selection:bg-[#B4D5FE]/60" placeholder="// Write Simmer source code here..."></textarea>
+                </div>
+            </div>
+
+            <!-- Error Banner (if any) -->
+            <div id="errorBanner" class="hidden p-3.5 bg-rose-50 border-t border-rose-200 text-xs shrink-0">
+                <div class="flex items-start space-x-2.5">
+                    <i class="fa-solid fa-circle-exclamation text-rose-600 mt-0.5 text-xs"></i>
+                    <div class="flex-1">
+                        <div class="flex items-center justify-between">
+                            <span id="errorStageBadge" class="font-medium text-rose-800 uppercase tracking-wider text-[10px] px-2 py-0.5 rounded bg-rose-100 border border-rose-200 font-mono">Compiler Error</span>
+                            <span class="text-[11px] text-rose-600">Compilation halted</span>
+                        </div>
+                        <p id="errorMessage" class="text-rose-900 mt-1 font-mono text-xs leading-relaxed"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Footer -->
+            <div class="h-7 bg-[#FAFAFC] border-t border-black/[0.05] text-[11px] text-[#64748B] px-4 flex items-center justify-between font-mono shrink-0">
+                <span>Grammar: Simmer v1.2</span>
+                <span>Press Ctrl+Enter to re-compile</span>
+            </div>
+        </section>
+
+        <!-- -------------------------------------------------------- -->
+        <!-- RIGHT PANE: Telemetry Bento & Pipeline (Alabaster Canvas)-->
+        <!-- -------------------------------------------------------- -->
+        <section class="lg:col-span-7 flex flex-col bg-[#F4F6FB] min-w-0 flex-1 h-full overflow-hidden">
+            
+            <!-- Segmented Tab Navigation Bar -->
+            <div class="px-5 pt-2.5 pb-1 shrink-0">
+                <nav class="bg-[#E2E8F0]/80 p-1 rounded-xl border border-[#CBD5E1]/80 flex items-center space-x-1 overflow-x-auto no-scrollbar shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)]">
+                    <button onclick="switchTab('overview')" id="tab-btn-overview" class="tab-btn active px-3.5 py-1.5 rounded-lg text-xs font-medium bg-white text-[#312E81] shadow-[0_1px_4px_rgba(79,70,229,0.12)] border border-[#6366F1]/15 flex items-center space-x-2 apple-transition shrink-0">
+                        <i class="fa-solid fa-gauge-high text-xs text-[#4F46E5]"></i>
+                        <span>Overview</span>
+                    </button>
+                    <button onclick="switchTab('tokens')" id="tab-btn-tokens" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-[#64748B] hover:text-[#0F172A] hover:bg-black/[0.03] flex items-center space-x-2 apple-transition shrink-0">
+                        <i class="fa-solid fa-font text-xs"></i>
+                        <span>Tokens</span>
+                        <span id="tokenCountBadge" class="text-[10px] px-1.5 py-0.2 rounded-full bg-black/[0.06] text-[#3A3A3C] font-mono">0</span>
+                    </button>
+                    <button onclick="switchTab('ast')" id="tab-btn-ast" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-[#64748B] hover:text-[#0F172A] hover:bg-black/[0.03] flex items-center space-x-2 apple-transition shrink-0">
+                        <i class="fa-solid fa-network-wired text-xs"></i>
+                        <span>AST Tree</span>
+                    </button>
+                    <button onclick="switchTab('semantic')" id="tab-btn-semantic" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-[#64748B] hover:text-[#0F172A] hover:bg-black/[0.03] flex items-center space-x-2 apple-transition shrink-0">
+                        <i class="fa-solid fa-shield-halved text-xs"></i>
+                        <span>Symbol Table</span>
+                    </button>
+                    <button onclick="switchTab('ir')" id="tab-btn-ir" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-[#64748B] hover:text-[#0F172A] hover:bg-black/[0.03] flex items-center space-x-2 apple-transition shrink-0">
+                        <i class="fa-solid fa-bolt text-xs"></i>
+                        <span>LLVM IR Diff</span>
+                    </button>
+                    <button onclick="switchTab('asm')" id="tab-btn-asm" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-[#64748B] hover:text-[#0F172A] hover:bg-black/[0.03] flex items-center space-x-2 apple-transition shrink-0">
+                        <i class="fa-solid fa-microchip text-xs"></i>
+                        <span>Assembly</span>
+                    </button>
+                    <button onclick="switchTab('tests')" id="tab-btn-tests" class="tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-[#64748B] hover:text-[#0F172A] hover:bg-black/[0.03] flex items-center space-x-2 apple-transition shrink-0">
+                        <i class="fa-solid fa-flask text-xs"></i>
+                        <span>Test Suite</span>
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Tab Contents Container (Comfortable, Non-Clipped 100vh Viewport Layout) -->
+            <div class="flex-1 overflow-y-auto min-h-0 px-5 py-2.5 space-y-3 pb-6">
+
+                <!-- ------------------------------------------------ -->
+                <!-- TAB 1: OVERVIEW & METRICS (Tightened Daylight)    -->
+                <!-- ------------------------------------------------ -->
+                <div id="tab-overview" class="tab-pane space-y-3">
+                    
+                    <!-- Top Telemetry Card: Py-3.5 Px-5 Daylight Card -->
+                    <div class="daylight-card rounded-2xl py-3 px-5">
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 divide-y md:divide-y-0 md:divide-x divide-[#E2E8F0]">
+                            
+                            <!-- Stat 1: Instructions -->
+                            <div class="space-y-0.5">
+                                <span class="text-[#64748B] text-[11px] uppercase tracking-wider font-semibold">Instructions</span>
+                                <div class="flex items-baseline space-x-2 pt-0.5 font-mono">
+                                    <span id="kpiBefore" class="text-[#AEAEB2] line-through text-lg font-mono tabular-numbers">20</span>
+                                    <span class="text-[#64748B] font-mono text-xs">→</span>
+                                    <span id="kpiAfter" class="text-2xl lg:text-3xl font-semibold tracking-tight text-[#1E293B] font-mono tabular-numbers">6</span>
+                                </div>
+                                <span id="kpiDiff" class="text-[11px] text-[#475569] font-mono block">14 eliminated</span>
+                            </div>
+
+                            <!-- Stat 2: Efficiency Gain -->
+                            <div class="space-y-0.5 md:pl-5 pt-3 md:pt-0">
+                                <span class="text-[#64748B] text-[11px] uppercase tracking-wider font-semibold">Efficiency Gain</span>
+                                <div class="flex items-baseline space-x-1 pt-0.5 font-mono">
+                                    <span id="kpiReduction" class="text-2xl lg:text-3xl font-semibold tracking-tight text-[#059669] font-mono tabular-numbers">70.0%</span>
+                                </div>
+                                <div>
+                                    <span class="inline-flex items-center text-[10px] font-medium text-[#047857] bg-[#ECFDF5] border border-[#A7F3D0] px-2 py-0.5 rounded-full">
+                                        <i class="fa-solid fa-arrow-down mr-1 text-[9px]"></i>Redundant code cut
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Stat 3: JIT Exit Code -->
+                            <div class="space-y-0.5 md:pl-5 pt-3 md:pt-0">
+                                <span class="text-[#64748B] text-[11px] uppercase tracking-wider font-semibold">JIT Exit Code</span>
+                                <div class="flex items-baseline space-x-1 pt-0.5 font-mono">
+                                    <span id="kpiExitCode" class="text-2xl lg:text-3xl font-semibold tracking-tight text-[#1E293B] font-mono tabular-numbers">55</span>
+                                </div>
+                                <span class="text-[11px] text-[#475569] font-mono block">In-Memory MCJIT</span>
+                            </div>
+
+                            <!-- Stat 4: Total Latency -->
+                            <div class="space-y-0.5 md:pl-5 pt-3 md:pt-0">
+                                <span class="text-[#64748B] text-[11px] uppercase tracking-wider font-semibold">Total Latency</span>
+                                <div class="flex items-baseline space-x-1 pt-0.5 font-mono">
+                                    <span id="kpiLatency" class="text-2xl lg:text-3xl font-semibold tracking-tight text-[#1E293B] font-mono tabular-numbers">17.9</span>
+                                    <span class="text-xs text-[#64748B] font-mono">ms</span>
+                                </div>
+                                <span class="text-[11px] text-[#475569] font-mono block">Frontend + PassBuilder</span>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- Live JIT Terminal Console (Daylight Studio Terminal - Compact Height) -->
+                    <div class="bg-white border border-[#E2E8F0] rounded-2xl shadow-sm overflow-hidden">
+                        <!-- macOS Light Titlebar with Authentic Traffic Lights -->
+                        <div class="px-4 py-2 bg-[#F8F8FA] border-b border-black/[0.06] flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-[#FF5F56] border border-black/10 inline-block"></span>
+                                <span class="w-2.5 h-2.5 rounded-full bg-[#FFBD2E] border border-black/10 inline-block"></span>
+                                <span class="w-2.5 h-2.5 rounded-full bg-[#27C93F] border border-black/10 inline-block"></span>
+                                <span class="ml-2 font-mono text-xs text-[#475569] font-medium">Live JIT Terminal Console</span>
+                            </div>
+                            <span class="text-[11px] text-[#64748B] font-mono">stdout / printf runtime</span>
+                        </div>
+                        <!-- Terminal Console Body (Soft Warm Paper #FCFCFD) -->
+                        <div class="px-4 py-2.5 font-mono text-xs text-[#0F172A] bg-[#FCFCFD] min-h-[90px] max-h-[120px] overflow-y-auto leading-relaxed">
+                            <div id="terminalOutput">
+                                <div class="text-[#64748B]">// Simmer Compiler v1.2 Execution Log</div>
+                                <div class="mt-1 font-medium text-[#059669] flex items-center space-x-1.5">
+                                    <i class="fa-solid fa-check text-xs"></i>
+                                    <span>Program exited with code: 55</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- End-to-End Pipeline Execution Trace (Daylight 8-Card Bento Grid - Fits 1080p Fold) -->
+                    <div class="bg-white border border-[#E2E8F0] rounded-2xl shadow-sm p-3.5 space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <h4 class="text-xs uppercase tracking-wider font-semibold text-[#64748B] flex items-center space-x-2">
+                                <i class="fa-solid fa-diagram-project text-[#64748B] text-xs"></i>
+                                <span>End-to-End Pipeline Execution Trace</span>
+                            </h4>
+                            <span class="text-[11px] text-[#059669] bg-[#ECFDF5] border border-[#A7F3D0] px-2.5 py-0.5 rounded-full font-mono font-medium flex items-center space-x-1">
+                                <i class="fa-solid fa-circle-check text-[10px]"></i>
+                                <span>7 / 7 Phases Passed</span>
+                            </span>
+                        </div>
+                        
+                        <!-- Responsive 4x2 Apple Bento Pipeline Grid (Compact Padding) -->
+                        <div id="pipelineTimeline" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                            <!-- Injected by JavaScript with daylight surfaces and proportion bars -->
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- ------------------------------------------------ -->
+                <!-- TAB 2: LEXER TOKENS                              -->
+                <!-- ------------------------------------------------ -->
+                <div id="tab-tokens" class="tab-pane hidden space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-semibold text-[#0F172A]">Tokenized Lexeme Stream</h3>
+                            <p class="text-xs text-[#475569] mt-0.5">Stream of lexical tokens generated by hand-rolled regex matcher.</p>
+                        </div>
+                        <input id="tokenSearchInput" oninput="filterTokens()" type="text" placeholder="Filter tokens..." class="bg-[#F2F2F7] border border-[#E2E8F0] text-xs px-3 py-1.5 rounded-lg w-52 text-[#0F172A] focus:outline-none focus:border-black/30 font-mono">
+                    </div>
+
+                    <!-- Token Chips Grid -->
+                    <div id="tokenGrid" class="flex flex-wrap gap-2 max-h-[480px] overflow-y-auto p-5 bg-white rounded-2xl border border-[#E2E8F0] shadow-sm">
+                        <p class="text-xs text-[#64748B] font-mono">No tokens yet. Compile code to see tokens.</p>
+                    </div>
+
+                    <!-- Token Legend -->
+                    <div class="flex items-center space-x-5 text-xs text-[#475569] pt-1 font-mono text-[11px]">
+                        <span class="flex items-center space-x-1.5"><span class="w-2 h-2 rounded-full bg-purple-500"></span><span>KEYWORD</span></span>
+                        <span class="flex items-center space-x-1.5"><span class="w-2 h-2 rounded-full bg-blue-500"></span><span>IDENTIFIER</span></span>
+                        <span class="flex items-center space-x-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span><span>NUMBER</span></span>
+                        <span class="flex items-center space-x-1.5"><span class="w-2 h-2 rounded-full bg-amber-500"></span><span>OPERATOR</span></span>
+                        <span class="flex items-center space-x-1.5"><span class="w-2 h-2 rounded-full bg-zinc-400"></span><span>PUNCTUATION</span></span>
+                    </div>
+                </div>
+
+                <!-- ------------------------------------------------ -->
+                <!-- TAB 3: INTERACTIVE AST                           -->
+                <!-- ------------------------------------------------ -->
+                <div id="tab-ast" class="tab-pane hidden space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-semibold text-[#0F172A]">Abstract Syntax Tree (AST)</h3>
+                            <p class="text-xs text-[#475569] mt-0.5">Built by hand-rolled Recursive-Descent Parser with precedence climbing.</p>
+                        </div>
+                        <button onclick="toggleAstRawView()" id="astToggleBtn" class="px-3 py-1.5 bg-[#F2F2F7] hover:bg-[#E5E5EA] border border-[#E2E8F0] text-xs rounded-lg text-[#0F172A] font-medium apple-transition">
+                            <i class="fa-solid fa-code mr-1.5"></i> Switch to Raw View
+                        </button>
+                    </div>
+
+                    <!-- Visual Tree Container -->
+                    <div id="astTreeContainer" class="p-6 bg-white rounded-2xl border border-[#E2E8F0] shadow-sm max-h-[540px] overflow-y-auto">
+                        <div id="astTreeRoot" class="space-y-2">
+                            <p class="text-xs text-[#64748B] font-mono">Compile code to inspect the generated Abstract Syntax Tree.</p>
+                        </div>
+                    </div>
+
+                    <!-- Raw AST Container -->
+                    <div id="astRawContainer" class="hidden p-5 bg-white rounded-2xl border border-[#E2E8F0] shadow-sm max-h-[540px] overflow-y-auto">
+                        <pre id="astRawText" class="font-mono text-xs text-[#0F172A] leading-relaxed"></pre>
+                    </div>
+                </div>
+
+                <!-- ------------------------------------------------ -->
+                <!-- TAB 4: SEMANTIC & SYMBOL TABLE                   -->
+                <!-- ------------------------------------------------ -->
+                <div id="tab-semantic" class="tab-pane hidden space-y-5">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-semibold text-[#0F172A]">Semantic Symbol Table</h3>
+                            <p class="text-xs text-[#475569] mt-0.5">Static analysis phase verifying declarations, scope resolution, and duplicate defense.</p>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-full text-xs font-mono bg-[#ECFDF5] text-[#047857] border border-[#A7F3D0] flex items-center space-x-1.5 font-medium">
+                            <i class="fa-solid fa-check text-[10px]"></i>
+                            <span>Scope Validated</span>
+                        </span>
+                    </div>
+
+                    <!-- Registered Variables Grid -->
+                    <div class="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-sm space-y-3">
+                        <h4 class="text-xs uppercase tracking-wider font-semibold text-[#64748B]">Variables in Active Symbol Table</h4>
+                        <div id="symbolTableGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                            <p class="text-xs text-[#64748B] font-mono col-span-full">No variables declared yet.</p>
+                        </div>
+                    </div>
+
+                    <!-- Compile-time Defensive Invariants -->
+                    <div class="bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-sm space-y-3">
+                        <h4 class="text-xs uppercase tracking-wider font-semibold text-[#64748B]">Compile-Time Safety Invariants</h4>
+                        <div class="space-y-2 text-xs font-mono">
+                            <div class="p-3 bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl flex items-center justify-between">
+                                <span class="text-[#0F172A]">1. Declaration Precedence</span>
+                                <span class="text-[#047857] text-xs font-medium"><i class="fa-solid fa-shield mr-1.5"></i>Enforced (let required)</span>
+                            </div>
+                            <div class="p-3 bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl flex items-center justify-between">
+                                <span class="text-[#0F172A]">2. Duplicate Declaration Defense</span>
+                                <span class="text-[#047857] text-xs font-medium"><i class="fa-solid fa-shield mr-1.5"></i>Protected (Error on re-decl)</span>
+                            </div>
+                            <div class="p-3 bg-[#F9F9FB] border border-[#E2E8F0] rounded-xl flex items-center justify-between">
+                                <span class="text-[#0F172A]">3. Scope & Identifier Resolution</span>
+                                <span class="text-[#047857] text-xs font-medium"><i class="fa-solid fa-shield mr-1.5"></i>Resolved against symbol table</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ------------------------------------------------ -->
+                <!-- TAB 5: LLVM IR DIFF                              -->
+                <!-- ------------------------------------------------ -->
+                <div id="tab-ir" class="tab-pane hidden space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-semibold text-[#0F172A]">LLVM Intermediate Representation (IR)</h3>
+                            <p class="text-xs text-[#475569] mt-0.5">Side-by-side comparison of Raw IR vs. LLVM PassBuilder (<span id="irOptLabel" class="font-mono text-[#047857] font-semibold">-O3</span>).</p>
+                        </div>
+                        <span id="irDiffBadge" class="px-2.5 py-1 text-xs font-mono rounded-lg bg-[#EFEFF4] text-[#0F172A] border border-[#E2E8F0] font-medium">14 instructions eliminated</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Raw IR (Left) -->
+                        <div class="bg-white rounded-2xl overflow-hidden border border-[#E2E8F0] shadow-sm">
+                            <div class="px-4 py-2.5 bg-[#F8F8FA] border-b border-black/[0.06] flex items-center justify-between text-xs">
+                                <span class="font-mono text-[#0F172A] font-semibold"><i class="fa-solid fa-file-code mr-1.5 text-amber-600"></i>Raw LLVM IR (Pre-Optimization)</span>
+                                <span id="rawIrLineCount" class="text-[#64748B] font-mono text-[11px]">0 lines</span>
+                            </div>
+                            <pre id="rawIrText" class="p-4 font-mono text-xs text-[#475569] leading-relaxed max-h-[480px] overflow-y-auto">; Compile code to generate LLVM IR</pre>
+                        </div>
+
+                        <!-- Optimized IR (Right) -->
+                        <div class="bg-white rounded-2xl overflow-hidden border border-[#A7F3D0] shadow-sm">
+                            <div class="px-4 py-2.5 bg-[#F0FDF4] border-b border-[#A7F3D0] flex items-center justify-between text-xs">
+                                <span class="font-mono text-[#047857] font-semibold"><i class="fa-solid fa-bolt mr-1.5 text-[#059669]"></i>Optimized LLVM IR (Post-PassBuilder)</span>
+                                <span id="optIrLineCount" class="text-[#047857]/70 font-mono text-[11px]">0 lines</span>
+                            </div>
+                            <pre id="optIrText" class="p-4 font-mono text-xs text-[#065F46] leading-relaxed max-h-[480px] overflow-y-auto">; Optimized IR will appear here</pre>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ------------------------------------------------ -->
+                <!-- TAB 6: ASSEMBLY & BINARY EMISSION                -->
+                <!-- ------------------------------------------------ -->
+                <div id="tab-asm" class="tab-pane hidden space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-semibold text-[#0F172A]">Native Target Machine Assembly</h3>
+                            <p class="text-xs text-[#475569] mt-0.5">Emitted machine target architecture: <span id="targetTripleLabel" class="font-mono text-[#0F172A] font-semibold">host</span></p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <a href="/api/download/asm" class="px-3 py-1.5 bg-[#F2F2F7] hover:bg-[#E5E5EA] text-xs font-mono text-[#0F172A] border border-[#E2E8F0] rounded-lg flex items-center space-x-1.5 apple-transition font-medium">
+                                <i class="fa-solid fa-download text-[#475569] text-xs"></i>
+                                <span>Download .s</span>
+                            </a>
+                            <a href="/api/download/obj" class="px-3 py-1.5 bg-[#F2F2F7] hover:bg-[#E5E5EA] text-xs font-mono text-[#0F172A] border border-[#E2E8F0] rounded-lg flex items-center space-x-1.5 apple-transition font-medium">
+                                <i class="fa-solid fa-file-binary text-[#475569] text-xs"></i>
+                                <span>Download .o</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Assembly Code Viewer -->
+                    <div class="bg-white rounded-2xl overflow-hidden border border-[#E2E8F0] shadow-sm">
+                        <div class="px-4 py-2.5 bg-[#F8F8FA] border-b border-black/[0.06] flex items-center justify-between text-xs">
+                            <span class="font-mono text-[#0F172A] font-semibold"><i class="fa-solid fa-microchip mr-1.5 text-[#475569]"></i>Target Assembly Code</span>
+                            <span id="asmLineCount" class="text-[#64748B] font-mono text-[11px]">0 lines</span>
+                        </div>
+                        <pre id="asmText" class="p-5 font-mono text-xs text-[#0F172A] leading-relaxed max-h-[480px] overflow-y-auto">; Compile code to view target assembly</pre>
+                    </div>
+                </div>
+
+                <!-- ------------------------------------------------ -->
+                <!-- TAB 7: TEST SUITE RUNNER                         -->
+                <!-- ------------------------------------------------ -->
+                <div id="tab-tests" class="tab-pane hidden space-y-5">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-semibold text-[#0F172A]">Automated Correctness Test Suite</h3>
+                            <p class="text-xs text-[#475569] mt-0.5">Executes all 30 language tests in-memory to prove compiler correctness.</p>
+                        </div>
+                        <button id="runTestsBtn" onclick="runTestSuite()" class="px-3.5 py-1.5 bg-gradient-to-b from-[#4F46E5] to-[#3B82F6] hover:from-[#4338CA] hover:to-[#2563EB] text-white font-medium text-xs rounded-lg flex items-center space-x-1.5 apple-transition active:scale-[0.98] shadow-sm">
+                            <i class="fa-solid fa-play text-[10px]"></i>
+                            <span>Execute 30 Tests</span>
+                        </button>
+                    </div>
+
+                    <!-- Metrics Ribbon -->
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-sm">
+                            <span class="text-[#64748B] text-[11px] uppercase tracking-wider font-semibold">Total Test Cases</span>
+                            <span id="testTotalCount" class="text-2xl font-semibold font-mono text-[#0F172A] block mt-1 tabular-numbers">30</span>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-sm">
+                            <span class="text-[#64748B] text-[11px] uppercase tracking-wider font-semibold">Passed</span>
+                            <span id="testPassedCount" class="text-2xl font-semibold font-mono text-[#059669] block mt-1 tabular-numbers">--</span>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-sm">
+                            <span class="text-[#64748B] text-[11px] uppercase tracking-wider font-semibold">Failed</span>
+                            <span id="testFailedCount" class="text-2xl font-semibold font-mono text-[#DC2626] block mt-1 tabular-numbers">--</span>
+                        </div>
+                    </div>
+
+                    <!-- Tests Breakdown Table -->
+                    <div class="bg-white rounded-2xl overflow-hidden border border-[#E2E8F0] shadow-sm">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-[#F8F8FA] text-[#64748B] font-mono uppercase text-[10px] border-b border-black/[0.06]">
+                                <tr>
+                                    <th class="px-4 py-2.5">#</th>
+                                    <th class="px-4 py-2.5">Test Name</th>
+                                    <th class="px-4 py-2.5">Expected Result</th>
+                                    <th class="px-4 py-2.5">Actual Result</th>
+                                    <th class="px-4 py-2.5">Latency</th>
+                                    <th class="px-4 py-2.5">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="testTableBody" class="divide-y divide-[#E2E8F0] font-mono text-[#0F172A]">
+                                <tr>
+                                    <td colspan="6" class="px-4 py-8 text-center text-[#64748B]">Click 'Execute 30 Tests' to run in-memory test suite.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <!-- ============================================================ -->
+    <!-- NEW SCRIPT MODAL (macOS Daylight Modal Sheet)                -->
+    <!-- ============================================================ -->
+    <div id="newScriptModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+        <div class="bg-white border border-black/[0.1] rounded-2xl max-w-lg w-full p-5 shadow-2xl space-y-4 apple-transition">
+            <div class="flex items-center justify-between border-b border-black/[0.07] pb-3">
+                <div class="flex items-center space-x-2.5">
+                    <div class="w-7 h-7 rounded-lg bg-[#F2F2F7] border border-[#E2E8F0] flex items-center justify-center">
+                        <i class="fa-solid fa-file-circle-plus text-[#0F172A] text-xs"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-semibold text-[#0F172A]">Create New Simmer Script</h3>
+                        <p class="text-[11px] text-[#475569]">Write custom algorithms, loops, conditions, and tests</p>
+                    </div>
+                </div>
+                <button onclick="closeNewScriptModal()" class="text-[#64748B] hover:text-[#0F172A] p-1 rounded-md apple-transition">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+            
+            <div>
+                <label class="block text-xs font-semibold text-[#0F172A] mb-1.5 font-mono">Script Name</label>
+                <div class="relative">
+                    <input type="text" id="newScriptFilename" value="my_algorithm.sim" class="w-full bg-[#F2F2F7] border border-[#E2E8F0] rounded-lg pl-3 pr-12 py-1.5 text-xs font-mono text-[#0F172A] focus:outline-none focus:border-black/30">
+                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-mono text-[#64748B] select-none">.sim</span>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-[#0F172A] mb-2">Choose Starter Template</label>
+                <div class="grid grid-cols-2 gap-2 text-xs" id="templatePickerGrid">
+                    <button type="button" onclick="selectTemplate('blank')" id="tmpl-blank" class="tmpl-card p-3 bg-[#F0FDF4] border-2 border-[#10B981] rounded-xl text-left apple-transition space-y-1">
+                        <span class="font-semibold text-[#0F172A] block text-xs flex items-center justify-between">
+                            <span>Blank Canvas</span>
+                            <i class="fa-solid fa-circle-check text-[#059669] text-xs"></i>
+                        </span>
+                        <span class="text-[10px] text-[#475569] block leading-tight">Minimal script with variable declaration and return</span>
+                    </button>
+                    <button type="button" onclick="selectTemplate('while_loop')" id="tmpl-while_loop" class="tmpl-card p-3 bg-[#F9F9FB] border border-[#E2E8F0] hover:border-black/20 rounded-xl text-left apple-transition space-y-1">
+                        <span class="font-semibold text-[#0F172A] block text-xs flex items-center justify-between">
+                            <span>While Loop</span>
+                        </span>
+                        <span class="text-[10px] text-[#64748B] block leading-tight">Iteration counter with condition test</span>
+                    </button>
+                    <button type="button" onclick="selectTemplate('for_loop')" id="tmpl-for_loop" class="tmpl-card p-3 bg-[#F9F9FB] border border-[#E2E8F0] hover:border-black/20 rounded-xl text-left apple-transition space-y-1">
+                        <span class="font-semibold text-[#0F172A] block text-xs flex items-center justify-between">
+                            <span>For Loop</span>
+                        </span>
+                        <span class="text-[10px] text-[#64748B] block leading-tight">Bounded range accumulation (from start to end)</span>
+                    </button>
+                    <button type="button" onclick="selectTemplate('if_else')" id="tmpl-if_else" class="tmpl-card p-3 bg-[#F9F9FB] border border-[#E2E8F0] hover:border-black/20 rounded-xl text-left apple-transition space-y-1">
+                        <span class="font-semibold text-[#0F172A] block text-xs flex items-center justify-between">
+                            <span>If-Else Branch</span>
+                        </span>
+                        <span class="text-[10px] text-[#64748B] block leading-tight">Multi-path relational decision tree</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end space-x-2 pt-3 border-t border-black/[0.07]">
+                <button onclick="closeNewScriptModal()" class="px-3 py-1.5 text-xs font-medium text-[#475569] hover:text-[#0F172A] rounded-lg apple-transition">Cancel</button>
+                <button onclick="confirmCreateNewScript()" class="px-4 py-1.5 text-xs font-semibold bg-gradient-to-b from-[#4F46E5] to-[#3B82F6] hover:from-[#4338CA] hover:to-[#2563EB] text-white rounded-lg shadow-sm apple-transition">Create & Open</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- APPLICATION JAVASCRIPT (100% Zero-Regression Architecture)  -->
+    <!-- ============================================================ -->
+    <script>
+        let currentOptLevel = 3;
+        let allExamples = [];
+        let allCustomScripts = [];
+        let currentScriptObj = null;
+        let selectedTemplateKey = 'blank';
+        let isAstRawView = false;
+        let lastTokens = [];
+
+        const TEMPLATES = {
+            blank: `// Custom Simmer Script\nlet x = 10\nlet y = 20\nlet sum = x + y\nreturn sum\n`,
+            while_loop: `// Countdown Loop Algorithm\nlet n = 50\nlet count = 0\n\nwhile n > 0 {\n    n = n - 5\n    count = count + 1\n}\n\nreturn count\n`,
+            for_loop: `// Bounded For Loop\nlet sum = 0\nlet i = 0\n\nfor i = 1 to 21 {\n    sum = sum + i\n}\n\nreturn sum\n`,
+            if_else: `// Conditional Decision\nlet score = 88\nlet result = 0\n\nif score >= 80 {\n    result = 1\n} else {\n    result = 0\n}\n\nreturn result\n`
+        };
+
+        const codeEditor = document.getElementById('codeEditor');
+        const syntaxBackdrop = document.getElementById('syntaxBackdrop');
+        const lineNumbers = document.getElementById('lineNumbers');
+        const exampleSelector = document.getElementById('exampleSelector');
+        const currentFileName = document.getElementById('currentFileName');
+        const customScriptBadge = document.getElementById('customScriptBadge');
+        const deleteScriptBtn = document.getElementById('deleteScriptBtn');
+        const codeLengthBadge = document.getElementById('codeLengthBadge');
+        const errorBanner = document.getElementById('errorBanner');
+        const errorStageBadge = document.getElementById('errorStageBadge');
+        const errorMessage = document.getElementById('errorMessage');
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            loadCustomScriptsFromStorage();
+            await loadExamplesList();
+            setupEditorEvents();
+            if (codeEditor.value.trim().length > 0) {
+                compileCurrentCode();
+            }
+        });
+
+        // Xcode Light Syntax Highlighter (Live Dual-Layer Tokenizer)
+        function highlightCode(code) {
+            if (!code) return '';
+            
+            // Regex to tokenize comments, strings, keywords, numbers, operators, punctuation, identifiers
+            const tokenRegex = /(\/\/[^\n]*)|("(?:\\.|[^"\\])*")|(\b(?:let|if|else|while|for|to|return|fn|print)\b)|(\b\d+\b)|(==|!=|<=|>=|=>|\+|-|\*|\/|=|>|<)|([{}();,])|(\b[a-zA-Z_][a-zA-Z0-9_]*\b)|(\s+)|(.)/g;
+            
+            let html = '';
+            let match;
+            while ((match = tokenRegex.exec(code)) !== null) {
+                const [full, comment, str, keyword, number, operator, punct, identifier, space, other] = match;
+                if (comment) {
+                    html += `<span style="color: #6C7986; font-style: italic;">${escapeHtml(comment)}</span>`;
+                } else if (str) {
+                    html += `<span style="color: #C41A16;">${escapeHtml(str)}</span>`;
+                } else if (keyword) {
+                    html += `<span style="color: #9B2393; font-weight: 600;">${escapeHtml(keyword)}</span>`;
+                } else if (number) {
+                    html += `<span style="color: #1C00CF; font-weight: 500;">${escapeHtml(number)}</span>`;
+                } else if (operator) {
+                    html += `<span style="color: #3F6E74; font-weight: 600;">${escapeHtml(operator)}</span>`;
+                } else if (punct) {
+                    html += `<span style="color: #515154;">${escapeHtml(punct)}</span>`;
+                } else if (identifier) {
+                    html += `<span style="color: #0F172A;">${escapeHtml(identifier)}</span>`;
+                } else if (space) {
+                    html += escapeHtml(space);
+                } else {
+                    html += escapeHtml(other || full);
+                }
+            }
+            if (code.endsWith('\n')) {
+                html += '\n';
+            }
+            return html;
+        }
+
+        function updateSyntax() {
+            if (syntaxBackdrop) {
+                syntaxBackdrop.innerHTML = highlightCode(codeEditor.value);
+            }
+        }
+
+        // Local Storage for Custom User Scripts
+        function loadCustomScriptsFromStorage() {
+            try {
+                const stored = localStorage.getItem('simmer_custom_scripts');
+                if (stored) {
+                    allCustomScripts = JSON.parse(stored);
+                } else {
+                    allCustomScripts = [];
+                }
+            } catch (err) {
+                console.error("Failed to read custom scripts:", err);
+                allCustomScripts = [];
+            }
+        }
+
+        function saveCustomScriptsToStorage() {
+            try {
+                localStorage.setItem('simmer_custom_scripts', JSON.stringify(allCustomScripts));
+            } catch (err) {
+                console.error("Failed to save custom scripts:", err);
+            }
+        }
+
+        function renderScriptSelector(selectedIdOrFilename = null) {
+            exampleSelector.innerHTML = '';
+
+            // Group 1: Custom User Scripts
+            if (allCustomScripts.length > 0) {
+                const customGroup = document.createElement('optgroup');
+                customGroup.label = '✨ My Custom Scripts';
+                allCustomScripts.forEach(script => {
+                    const opt = document.createElement('option');
+                    opt.value = 'custom:' + script.id;
+                    opt.textContent = `★ ${script.filename}`;
+                    customGroup.appendChild(opt);
+                });
+                exampleSelector.appendChild(customGroup);
+            }
+
+            // Group 2: Built-in Benchmark Scripts
+            const benchGroup = document.createElement('optgroup');
+            benchGroup.label = '📚 Standard Benchmarks (13 Programs)';
+            allExamples.forEach(ex => {
+                const opt = document.createElement('option');
+                opt.value = 'bench:' + ex.filename;
+                opt.textContent = `${ex.filename} — ${ex.title}`;
+                benchGroup.appendChild(opt);
+            });
+            exampleSelector.appendChild(benchGroup);
+
+            // Select active option
+            if (selectedIdOrFilename) {
+                for (let i = 0; i < exampleSelector.options.length; i++) {
+                    const opt = exampleSelector.options[i];
+                    if (opt.value.includes(selectedIdOrFilename) || opt.textContent.includes(selectedIdOrFilename)) {
+                        exampleSelector.selectedIndex = i;
+                        break;
+                    }
+                }
+            }
+        }
+
+        async function loadExamplesList() {
+            try {
+                const res = await fetch('/api/examples');
+                allExamples = await res.json();
+                renderScriptSelector();
+
+                if (allCustomScripts.length > 0) {
+                    loadCustomScript(allCustomScripts[0]);
+                } else {
+                    const defaultEx = allExamples.find(e => e.filename.includes('05_fibonacci')) || allExamples[0];
+                    if (defaultEx) {
+                        loadBenchmark(defaultEx);
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to fetch examples:", err);
+            }
+        }
+
+        exampleSelector.addEventListener('change', (e) => {
+            const val = e.target.value;
+            if (val.startsWith('custom:')) {
+                const id = val.replace('custom:', '');
+                const script = allCustomScripts.find(s => s.id === id);
+                if (script) loadCustomScript(script);
+            } else if (val.startsWith('bench:')) {
+                const fn = val.replace('bench:', '');
+                const ex = allExamples.find(e => e.filename === fn);
+                if (ex) loadBenchmark(ex);
+            }
+        });
+
+        function loadBenchmark(ex) {
+            currentScriptObj = { ...ex, isCustom: false };
+            codeEditor.value = ex.code;
+            currentFileName.textContent = ex.filename;
+            customScriptBadge.classList.add('hidden');
+            deleteScriptBtn.classList.add('hidden');
+            updateLineNumbers();
+            updateSyntax();
+            renderScriptSelector(ex.filename);
+            compileCurrentCode();
+        }
+
+        function loadCustomScript(script) {
+            currentScriptObj = { ...script, isCustom: true };
+            codeEditor.value = script.code;
+            currentFileName.textContent = script.filename;
+            customScriptBadge.classList.remove('hidden');
+            deleteScriptBtn.classList.remove('hidden');
+            updateLineNumbers();
+            updateSyntax();
+            renderScriptSelector(script.id);
+            compileCurrentCode();
+        }
+
+        function loadExampleByName(filename) {
+            const ex = allExamples.find(item => item.filename === filename);
+            if (ex) {
+                loadBenchmark(ex);
+            }
+        }
+
+        // New Script Modal & Templates
+        function openNewScriptModal() {
+            document.getElementById('newScriptFilename').value = `custom_algo_${allCustomScripts.length + 1}`;
+            selectTemplate('blank');
+            document.getElementById('newScriptModal').classList.remove('hidden');
+        }
+
+        function closeNewScriptModal() {
+            document.getElementById('newScriptModal').classList.add('hidden');
+        }
+
+        function selectTemplate(key) {
+            selectedTemplateKey = key;
+            document.querySelectorAll('.tmpl-card').forEach(card => {
+                card.className = "tmpl-card p-3 bg-[#F9F9FB] border border-[#E2E8F0] hover:border-black/20 rounded-xl text-left apple-transition space-y-1";
+            });
+            const activeCard = document.getElementById(`tmpl-${key}`);
+            if (activeCard) {
+                activeCard.className = "tmpl-card p-3 bg-[#F0FDF4] border-2 border-[#10B981] rounded-xl text-left apple-transition space-y-1";
+            }
+        }
+
+        function confirmCreateNewScript() {
+            let name = document.getElementById('newScriptFilename').value.trim();
+            if (!name) name = `custom_script_${Date.now()}`;
+            if (!name.endsWith('.sim')) name += '.sim';
+
+            const templateCode = TEMPLATES[selectedTemplateKey] || TEMPLATES.blank;
+            const newScript = {
+                id: 'cust_' + Date.now(),
+                filename: name,
+                title: 'User Script',
+                code: templateCode,
+                isCustom: true
+            };
+
+            allCustomScripts.unshift(newScript);
+            saveCustomScriptsToStorage();
+            closeNewScriptModal();
+            loadCustomScript(newScript);
+        }
+
+        // Save Script (Ctrl+S or Save Button)
+        function saveCurrentScript() {
+            const code = codeEditor.value;
+            const filename = currentFileName.textContent;
+
+            if (currentScriptObj && currentScriptObj.isCustom) {
+                currentScriptObj.code = code;
+                const idx = allCustomScripts.findIndex(s => s.id === currentScriptObj.id);
+                if (idx !== -1) {
+                    allCustomScripts[idx].code = code;
+                }
+                saveCustomScriptsToStorage();
+                showSaveSuccessBadge();
+            } else {
+                const newName = prompt("Save as Custom Script name:", "my_" + filename);
+                if (!newName) return;
+                const cleanName = newName.endsWith('.sim') ? newName : newName + '.sim';
+                const customScript = {
+                    id: 'cust_' + Date.now(),
+                    filename: cleanName,
+                    title: 'Custom ' + cleanName,
+                    code: code,
+                    isCustom: true
+                };
+                allCustomScripts.unshift(customScript);
+                saveCustomScriptsToStorage();
+                loadCustomScript(customScript);
+                showSaveSuccessBadge();
+            }
+        }
+
+        function showSaveSuccessBadge() {
+            const saveBtn = document.getElementById('saveScriptBtn');
+            const originalHtml = saveBtn.innerHTML;
+            saveBtn.innerHTML = '<i class="fa-solid fa-check text-[#059669] text-[10px]"></i><span class="text-[#059669] font-semibold ml-1">Saved</span>';
+            setTimeout(() => {
+                saveBtn.innerHTML = originalHtml;
+            }, 1500);
+        }
+
+        function deleteCurrentScript() {
+            if (!currentScriptObj || !currentScriptObj.isCustom) return;
+            if (!confirm(`Delete custom script "${currentScriptObj.filename}"?`)) return;
+
+            allCustomScripts = allCustomScripts.filter(s => s.id !== currentScriptObj.id);
+            saveCustomScriptsToStorage();
+
+            if (allCustomScripts.length > 0) {
+                loadCustomScript(allCustomScripts[0]);
+            } else {
+                loadExampleByName('05_fibonacci.sim');
+            }
+        }
+
+        function renameCurrentScript() {
+            const current = currentFileName.textContent;
+            const newName = prompt("Rename script to:", current);
+            if (!newName || newName === current) return;
+            const cleanName = newName.endsWith('.sim') ? newName : newName + '.sim';
+
+            currentFileName.textContent = cleanName;
+
+            if (currentScriptObj && currentScriptObj.isCustom) {
+                currentScriptObj.filename = cleanName;
+                const idx = allCustomScripts.findIndex(s => s.id === currentScriptObj.id);
+                if (idx !== -1) {
+                    allCustomScripts[idx].filename = cleanName;
+                }
+                saveCustomScriptsToStorage();
+                renderScriptSelector(currentScriptObj.id);
+            }
+        }
+
+        function handleFileImport(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const content = event.target.result;
+                const newScript = {
+                    id: 'cust_' + Date.now(),
+                    filename: file.name.endsWith('.sim') ? file.name : file.name + '.sim',
+                    title: 'Imported File',
+                    code: content,
+                    isCustom: true
+                };
+                allCustomScripts.unshift(newScript);
+                saveCustomScriptsToStorage();
+                loadCustomScript(newScript);
+            };
+            reader.readAsText(file);
+            e.target.value = '';
+        }
+
+        function exportCurrentSimFile() {
+            const code = codeEditor.value;
+            const filename = currentFileName.textContent || 'script.sim';
+            const blob = new Blob([code], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function setupEditorEvents() {
+            codeEditor.addEventListener('input', () => {
+                updateLineNumbers();
+                updateSyntax();
+            });
+
+            codeEditor.addEventListener('scroll', () => {
+                if (syntaxBackdrop) {
+                    syntaxBackdrop.scrollTop = codeEditor.scrollTop;
+                    syntaxBackdrop.scrollLeft = codeEditor.scrollLeft;
+                }
+                lineNumbers.scrollTop = codeEditor.scrollTop;
+            });
+
+            codeEditor.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    compileCurrentCode();
+                }
+                if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
+                    e.preventDefault();
+                    saveCurrentScript();
+                }
+                if (e.key === 'Tab') {
+                    e.preventDefault();
+                    const start = codeEditor.selectionStart;
+                    const end = codeEditor.selectionEnd;
+                    codeEditor.value = codeEditor.value.substring(0, start) + '    ' + codeEditor.value.substring(end);
+                    codeEditor.selectionStart = codeEditor.selectionEnd = start + 4;
+                    updateLineNumbers();
+                    updateSyntax();
+                }
+            });
+        }
+
+        function updateLineNumbers() {
+            const lines = codeEditor.value.split('\n');
+            const count = lines.length;
+            codeLengthBadge.textContent = `(${count} lines)`;
+            lineNumbers.innerHTML = Array.from({ length: count }, (_, i) => i + 1).join('<br>');
+        }
+
+        function copySourceCode() {
+            navigator.clipboard.writeText(codeEditor.value);
+            alert("Simmer source code copied to clipboard!");
+        }
+
+        function formatCodeSnippet() {
+            if (currentScriptObj && currentScriptObj.code) {
+                codeEditor.value = currentScriptObj.code;
+                updateLineNumbers();
+                updateSyntax();
+                compileCurrentCode();
+            }
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.className = "tab-btn px-3.5 py-1.5 rounded-lg text-xs font-medium text-[#64748B] hover:text-[#0F172A] hover:bg-black/[0.03] flex items-center space-x-2 apple-transition shrink-0";
+            });
+
+            const activeTab = document.getElementById(`tab-${tabId}`);
+            const activeBtn = document.getElementById(`tab-btn-${tabId}`);
+            if (activeTab) activeTab.classList.remove('hidden');
+            if (activeBtn) {
+                activeBtn.className = "tab-btn active px-3.5 py-1.5 rounded-lg text-xs font-medium bg-white text-[#312E81] shadow-[0_1px_4px_rgba(79,70,229,0.12)] border border-[#6366F1]/15 flex items-center space-x-2 apple-transition shrink-0";
+            }
+        }
+
+        function setOptLevel(level) {
+            currentOptLevel = level;
+            document.querySelectorAll('.opt-btn').forEach(btn => {
+                btn.className = "opt-btn px-2.5 py-1 rounded-md text-[#64748B] hover:text-[#0F172A] apple-transition text-xs font-mono";
+            });
+            const active = document.getElementById(`opt-${level}`);
+            if (active) {
+                active.className = "opt-btn px-2.5 py-1 rounded-md bg-white text-[#312E81] font-semibold shadow-[0_1px_3px_rgba(79,70,229,0.12)] border border-[#6366F1]/20 apple-transition text-xs font-mono";
+            }
+            compileCurrentCode();
+        }
+
+        async function compileCurrentCode() {
+            const code = codeEditor.value;
+            const compileBtn = document.getElementById('compileBtn');
+            compileBtn.disabled = true;
+            compileBtn.classList.add('opacity-75');
+
+            try {
+                const res = await fetch('/api/compile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        code: code,
+                        opt_level: currentOptLevel,
+                        name: currentFileName.textContent.replace('.sim', '')
+                    })
+                });
+
+                const data = await res.json();
+                renderCompilationResults(data);
+            } catch (err) {
+                console.error("Compilation request failed:", err);
+            } finally {
+                compileBtn.disabled = false;
+                compileBtn.classList.remove('opacity-75');
+            }
+        }
+
+        function renderCompilationResults(data) {
+            if (!data.success) {
+                errorBanner.classList.remove('hidden');
+                errorStageBadge.textContent = data.error_stage || 'Compilation Error';
+                errorMessage.textContent = data.error;
+                document.getElementById('terminalOutput').innerHTML = `
+                    <div class="text-rose-600 font-semibold flex items-center space-x-1.5">
+                        <i class="fa-solid fa-xmark text-xs"></i>
+                        <span>[${data.error_stage || 'ERROR'}] Compilation Failed</span>
+                    </div>
+                    <div class="text-rose-900 mt-1 font-mono text-xs">${escapeHtml(data.error)}</div>
+                `;
+                return;
+            } else {
+                errorBanner.classList.add('hidden');
+            }
+
+            // 1. Overview KPIs
+            const metrics = data.metrics || {};
+            document.getElementById('kpiBefore').textContent = metrics.before ?? '--';
+            document.getElementById('kpiAfter').textContent = metrics.after ?? '--';
+            document.getElementById('kpiDiff').textContent = `${metrics.eliminated ?? 0} eliminated`;
+            document.getElementById('kpiReduction').textContent = `${metrics.reduction_pct ?? 0}%`;
+            document.getElementById('kpiExitCode').textContent = data.jit_result ?? '--';
+            document.getElementById('kpiLatency').textContent = data.total_time_ms ?? '0.0';
+
+            // Terminal Console (Authentic Daylight Debug Console)
+            const term = document.getElementById('terminalOutput');
+            let termHtml = `<div class="text-[#64748B]">// Simmer Compiler v1.2 Execution Log</div>\n`;
+            if (data.stdout && data.stdout.length > 0) {
+                termHtml += `<div class="text-[#0F172A] my-1 font-semibold">${escapeHtml(data.stdout)}</div>\n`;
+            }
+            termHtml += `
+                <div class="mt-1 font-medium text-[#059669] flex items-center space-x-1.5">
+                    <i class="fa-solid fa-check text-xs"></i>
+                    <span>Program exited with code: ${data.jit_result}</span>
+                </div>
+            `;
+            term.innerHTML = termHtml;
+
+            // Pipeline Stepper (Apple Daylight Bento 4x2 Grid - Compact 1080p fit)
+            renderPipelineTimeline(data.stages || []);
+
+            // 2. Lexer Tokens Tab
+            lastTokens = data.tokens || [];
+            document.getElementById('tokenCountBadge').textContent = lastTokens.length;
+            renderTokens(lastTokens);
+
+            // 3. AST Tree Tab
+            renderAstTree(data.ast_tree);
+            document.getElementById('astRawText').textContent = data.ast_raw || '';
+
+            // 4. Semantic Symbol Table Tab
+            renderSymbolTable(data.symbols || []);
+
+            // 5. LLVM IR Tab
+            document.getElementById('rawIrText').textContent = data.raw_ir || '; No IR generated';
+            document.getElementById('optIrText').textContent = data.optimized_ir || '; No optimized IR';
+            document.getElementById('rawIrLineCount').textContent = `${(data.raw_ir || '').split('\n').length} lines`;
+            document.getElementById('optIrLineCount').textContent = `${(data.optimized_ir || '').split('\n').length} lines`;
+            document.getElementById('irOptLabel').textContent = `-O${metrics.opt_level ?? 3}`;
+            document.getElementById('irDiffBadge').textContent = `${metrics.eliminated ?? 0} instructions eliminated (${metrics.reduction_pct ?? 0}%)`;
+
+            // 6. Assembly Tab
+            document.getElementById('asmText').textContent = data.asm_code || '; No assembly';
+            document.getElementById('asmLineCount').textContent = `${(data.asm_code || '').split('\n').length} lines`;
+            document.getElementById('targetTripleLabel').textContent = data.target_triple || 'host';
+        }
+
+        // Apple Bento Pipeline Grid (Daylight 8-Card Grid)
+        function renderPipelineTimeline(stages) {
+            const container = document.getElementById('pipelineTimeline');
+            if (!stages || stages.length === 0) {
+                container.innerHTML = '<p class="text-xs text-[#64748B] font-mono col-span-full">No pipeline stages recorded.</p>';
+                return;
+            }
+
+            const maxTime = Math.max(...stages.map(s => parseFloat(s.time_ms) || 0.1), 1.0);
+
+            let cardsHtml = stages.map((s, idx) => {
+                const timeMs = parseFloat(s.time_ms) || 0;
+                const pct = Math.max(8, Math.min(100, Math.round((timeMs / maxTime) * 100)));
+                return `
+                    <div class="bg-white hover:bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-2.5 apple-transition flex flex-col justify-between space-y-1.5 shadow-[0_1px_2px_rgba(15,23,42,0.02)]">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] font-medium tracking-wider text-[#64748B] uppercase font-mono">${idx + 1}. ${s.name}</span>
+                            <i class="fa-solid fa-check text-[10px] text-[#10B981]"></i>
+                        </div>
+                        <div class="text-xs font-semibold text-[#0F172A] leading-snug break-words">
+                            ${s.summary}
+                        </div>
+                        <div class="pt-1 border-t border-[#E2E8F0]/70 space-y-1">
+                            <div class="flex items-center justify-between text-[10px] font-mono">
+                                <span class="text-[#64748B]">Latency</span>
+                                <span class="text-[#0F172A] font-medium">${s.time_ms} ms</span>
+                            </div>
+                            <div class="w-full bg-[#E2E8F0] h-1.5 rounded-full overflow-hidden">
+                                <div class="bg-gradient-to-r from-[#4F46E5] to-[#0EA5E9] h-full rounded-full" style="width: ${pct}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // If 7 stages, append an 8th summary bento card for a clean 4x2 grid
+            if (stages.length === 7) {
+                const totalStageTime = stages.reduce((acc, s) => acc + (parseFloat(s.time_ms) || 0), 0).toFixed(2);
+                cardsHtml += `
+                    <div class="bg-[#F4FDF8] border border-[#BBF7D0]/80 rounded-xl p-2.5 apple-transition flex flex-col justify-between space-y-1.5">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] font-medium tracking-wider text-[#047857] uppercase font-mono">Summary</span>
+                            <i class="fa-solid fa-circle-check text-[10px] text-[#047857]"></i>
+                        </div>
+                        <div class="text-xs font-medium text-[#0F172A] leading-snug">
+                            All 7 pipeline stages executed cleanly to native machine target.
+                        </div>
+                        <div class="pt-1 border-t border-[#BBF7D0]/50 flex items-center justify-between text-[10px] font-mono">
+                            <span class="text-[#047857]">Total Stage Time</span>
+                            <span class="text-[#0F172A] font-semibold">${totalStageTime} ms</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = cardsHtml;
+        }
+
+        function renderTokens(tokens) {
+            const grid = document.getElementById('tokenGrid');
+            if (!tokens || tokens.length === 0) {
+                grid.innerHTML = '<p class="text-xs text-[#64748B] font-mono">No tokens generated.</p>';
+                return;
+            }
+
+            const colorMap = {
+                'KEYWORD': 'bg-purple-50 text-purple-700 border-purple-200',
+                'IDENTIFIER': 'bg-blue-50 text-blue-700 border-blue-200',
+                'NUMBER': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                'OPERATOR': 'bg-amber-50 text-amber-700 border-amber-200',
+                'PUNCTUATION': 'bg-zinc-100 text-zinc-700 border-zinc-200',
+            };
+
+            grid.innerHTML = tokens.map((tok, i) => {
+                const color = colorMap[tok.type] || 'bg-zinc-100 text-zinc-700 border-zinc-200';
+                return `
+                    <div class="px-2.5 py-1 rounded-md border ${color} font-mono text-xs flex items-center space-x-2 shadow-xs">
+                        <span class="text-[10px] opacity-50">${i}</span>
+                        <span class="font-semibold text-[#0F172A]">${escapeHtml(tok.value)}</span>
+                        <span class="text-[9px] uppercase tracking-wider opacity-60">${tok.type}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterTokens() {
+            const q = document.getElementById('tokenSearchInput').value.toLowerCase();
+            const filtered = lastTokens.filter(t => t.value.toLowerCase().includes(q) || t.type.toLowerCase().includes(q));
+            renderTokens(filtered);
+        }
+
+        function renderAstTree(node) {
+            const root = document.getElementById('astTreeRoot');
+            if (!node) {
+                root.innerHTML = '<p class="text-xs text-[#64748B] font-mono">No AST available.</p>';
+                return;
+            }
+            root.innerHTML = buildAstNodeHtml(node);
+        }
+
+        function buildAstNodeHtml(node) {
+            if (!node) return '';
+            const hasChildren = node.children && node.children.length > 0;
+            const childrenHtml = hasChildren ? node.children.map(buildAstNodeHtml).join('') : '';
+
+            return `
+                <div class="ast-branch font-mono text-xs">
+                    <div class="inline-flex items-center space-x-2 py-1 px-2.5 rounded-lg bg-[#F9F9FB] border border-[#E2E8F0] hover:border-black/[0.14] apple-transition">
+                        <span class="text-[#0F172A] font-semibold">${escapeHtml(node.label || node.type)}</span>
+                        ${node.badge ? `<span class="text-[10px] px-1.5 py-0.2 rounded bg-white text-[#475569] border border-[#E2E8F0] font-mono shadow-xs">${escapeHtml(node.badge)}</span>` : ''}
+                    </div>
+                    ${hasChildren ? `<div class="mt-1">${childrenHtml}</div>` : ''}
+                </div>
+            `;
+        }
+
+        function toggleAstRawView() {
+            isAstRawView = !isAstRawView;
+            document.getElementById('astTreeContainer').classList.toggle('hidden', isAstRawView);
+            document.getElementById('astRawContainer').classList.toggle('hidden', !isAstRawView);
+            document.getElementById('astToggleBtn').innerHTML = isAstRawView 
+                ? '<i class="fa-solid fa-network-wired mr-1.5"></i> Switch to Tree View'
+                : '<i class="fa-solid fa-code mr-1.5"></i> Switch to Raw View';
+        }
+
+        function renderSymbolTable(symbols) {
+            const grid = document.getElementById('symbolTableGrid');
+            if (!symbols || symbols.length === 0) {
+                grid.innerHTML = '<p class="text-xs text-[#64748B] font-mono col-span-full">No declared variables in current scope.</p>';
+                return;
+            }
+            grid.innerHTML = symbols.map(sym => `
+                <div class="p-3.5 bg-[#F9F9FB] rounded-xl border border-[#E2E8F0] flex items-center justify-between font-mono text-xs">
+                    <div class="flex items-center space-x-2">
+                        <span class="w-2 h-2 rounded-full bg-[#059669]"></span>
+                        <span class="text-[#0F172A] font-semibold">${sym}</span>
+                    </div>
+                    <span class="text-[10px] text-[#64748B] uppercase font-mono">i32</span>
+                </div>
+            `).join('');
+        }
+
+        async function runTestSuite() {
+            const btn = document.getElementById('runTestsBtn');
+            btn.disabled = true;
+            btn.classList.add('opacity-75');
+
+            const tbody = document.getElementById('testTableBody');
+            tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-8 text-center text-[#64748B] font-mono"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Running in-memory test suite...</td></tr>';
+
+            try {
+                const res = await fetch('/api/run-tests', { method: 'POST' });
+                const data = await res.json();
+
+                document.getElementById('testTotalCount').textContent = data.total;
+                document.getElementById('testPassedCount').textContent = data.passed;
+                document.getElementById('testFailedCount').textContent = data.failed;
+
+                tbody.innerHTML = data.results.map((t, idx) => {
+                    const isPass = t.status === 'pass';
+                    return `
+                        <tr class="hover:bg-[#F9F9FB] apple-transition">
+                            <td class="px-4 py-2.5 text-[#64748B]">${idx + 1}</td>
+                            <td class="px-4 py-2.5 font-medium text-[#0F172A]">${escapeHtml(t.name)}</td>
+                            <td class="px-4 py-2.5 text-[#475569]">${t.expected}</td>
+                            <td class="px-4 py-2.5 ${isPass ? 'text-[#059669]' : 'text-[#DC2626]'} font-semibold">${t.actual}</td>
+                            <td class="px-4 py-2.5 text-[#64748B] text-[11px]">${t.time_ms} ms</td>
+                            <td class="px-4 py-2.5">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-semibold uppercase font-mono ${isPass ? 'bg-[#ECFDF5] text-[#047857] border border-[#A7F3D0]' : 'bg-rose-50 text-rose-700 border border-rose-200'}">
+                                    ${isPass ? '✓ PASS' : '✗ FAIL'}
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-4 text-rose-700 font-mono">Failed to run test suite: ${err.message}</td></tr>`;
+            } finally {
+                btn.disabled = false;
+                btn.classList.remove('opacity-75');
+            }
+        }
+
+        function escapeHtml(text) {
+            return String(text)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
