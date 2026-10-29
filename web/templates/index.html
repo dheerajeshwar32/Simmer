@@ -14,10 +14,10 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Fonts: SF Pro / Inter & SF Mono / JetBrains Mono -->
+    <!-- Fonts: Plus Jakarta Sans (Brandmark), Inter, SF Mono, JetBrains Mono, Fira Code -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
     
     <!-- FontAwesome Free/Pro Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -63,6 +63,17 @@
             background: #FFFFFF;
             border: 1px solid rgba(0, 0, 0, 0.07);
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.02), inset 0 1px 0 rgba(255, 255, 255, 1);
+        }
+
+        /* Bespoke Apple Pro Brandmark Typography */
+        .simmer-brandmark-text {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            font-weight: 800;
+            letter-spacing: -0.035em;
+            background: linear-gradient(180deg, #18181B 0%, #3F3F46 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
         }
 
         /* Authentic macOS Subtle Light Scrollbar */
@@ -170,8 +181,8 @@
             
             <!-- Brand Wordmark & Architecture Lockup -->
             <div class="flex items-center space-x-2">
-                <span class="text-[15px] font-bold tracking-[-0.03em] text-[#1D1D1F]">SIMMER</span>
-                <span class="bg-[#EFEFF4] text-[#515154] border border-black/[0.07] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] rounded-md px-2 py-0.5 text-[11px] font-semibold tracking-tight">Studio 1.2</span>
+                <span class="simmer-brandmark-text text-[16px] select-none tracking-[-0.035em]">SIMMER</span>
+                <span class="bg-[#EFEFF4] text-[#515154] border border-black/[0.07] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_1px_2px_rgba(0,0,0,0.03)] rounded-md px-2 py-0.5 text-[10.5px] font-semibold tracking-tight font-['Plus_Jakarta_Sans',sans-serif]">Studio 1.2</span>
                 <div class="h-3.5 w-[1px] bg-black/[0.08] hidden xl:inline"></div>
                 <span class="text-[11px] font-medium text-[#86868B] tracking-tight hidden xl:inline font-sans">LLVM Engine</span>
             </div>
