@@ -62,7 +62,7 @@ BANNER = rf"""
    ╚══════╝╚═╝╚═╝     ╚═╝╚═╝     ╚═╝╚══════╝╚═╝  ╚═╝
 {RESET}
 {CYAN}{BOLD}  ╔════════════════════════════════════════════════════════════════╗
-  ║                 🍲  SIMMER STUDIO DASHBOARD  🍲               ║
+  ║                 ⚡  SIMMER STUDIO DASHBOARD  ⚡               ║
   ║      Interactive Web UI for Compiler Design Lab Presentation   ║
   ╚════════════════════════════════════════════════════════════════╝{RESET}
 """
