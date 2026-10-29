@@ -43,6 +43,17 @@ class WhileLoop:
         self.condition, self.body = condition, body
     def __repr__(self): return f"While({self.condition}) Body({self.body})"
 
+# Print statement AST node: print <expr>
+class Print:
+    def __init__(self, value): self.value = value
+    def __repr__(self): return f"Print({self.value})"
+
+# For loop AST node: for <var> = <start> to <end> { <body> }
+class ForLoop:
+    def __init__(self, var_name, start, end, body):
+        self.var_name, self.start, self.end, self.body = var_name, start, end, body
+    def __repr__(self): return f"For({self.var_name} = {self.start} to {self.end}) Body({self.body})"
+
 # --- 2. The Parser ---
 class Parser:
     def __init__(self, tokens):
@@ -81,6 +92,12 @@ class Parser:
             self.consume('KEYWORD', 'return')
             value = self.parse_expression()
             return Return(value)
+
+        # Parse: print <expr>
+        elif token.type == 'KEYWORD' and token.value == 'print':
+            self.consume('KEYWORD', 'print')
+            value = self.parse_expression()
+            return Print(value)
             
         # Parse: if <cond> { ... } else { ... }
         elif token.type == 'KEYWORD' and token.value == 'if':
@@ -123,6 +140,22 @@ class Parser:
             self.consume('PUNCTUATION', '}')
             return WhileLoop(condition, body)
 
+        # Parse: for <var> = <start> to <end> { <body> }
+        elif token.type == 'KEYWORD' and token.value == 'for':
+            self.consume('KEYWORD', 'for')
+            var_name = self.consume('IDENTIFIER').value
+            self.consume('OPERATOR', '=')
+            start = self.parse_expression()
+            self.consume('KEYWORD', 'to')
+            end = self.parse_expression()
+
+            self.consume('PUNCTUATION', '{')
+            body = []
+            while self.current() and not (self.current().type == 'PUNCTUATION' and self.current().value == '}'):
+                body.append(self.parse_statement())
+            self.consume('PUNCTUATION', '}')
+            return ForLoop(var_name, start, end, body)
+
         # Parse: <name> = <expr> (Assignment)
         elif token.type == 'IDENTIFIER':
             name = self.consume('IDENTIFIER').value
@@ -142,7 +175,8 @@ class Parser:
 
     def parse_term(self):
         left = self.parse_primary()
-        while self.current() and self.current().type == 'OPERATOR' and self.current().value in ('*', '/'):
+        # Added '%' for modulo operator support in term-level parsing
+        while self.current() and self.current().type == 'OPERATOR' and self.current().value in ('*', '/', '%'):
             op = self.consume('OPERATOR').value
             right = self.parse_primary()
             left = BinOp(left, op, right)
@@ -156,6 +190,12 @@ class Parser:
         elif token.type == 'IDENTIFIER':
             self.consume('IDENTIFIER')
             return Identifier(token.value)
+        # Parenthesized expression: ( <expr> )
+        elif token.type == 'PUNCTUATION' and token.value == '(':
+            self.consume('PUNCTUATION', '(')
+            expr = self.parse_expression()
+            self.consume('PUNCTUATION', ')')
+            return expr
         raise SyntaxError(f"Expected Number or Identifier, got {token}")
 
 # --- Test the Parser ---

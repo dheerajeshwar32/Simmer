@@ -1,0 +1,14 @@
+// Count Collatz steps for n=27 (should be 111)
+let n = 27
+let steps = 0
+
+while n != 1 {
+    if n - (n / 2) * 2 == 0 {
+        n = n / 2
+    } else {
+        n = n * 3 + 1
+    }
+    steps = steps + 1
+}
+
+return steps

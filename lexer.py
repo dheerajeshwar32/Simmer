@@ -8,16 +8,21 @@ class Token:
         return f"Token({self.type}, '{self.value}')"
 
 # We have removed all culinary themes and replaced them with standard systems keywords
-KEYWORDS = {'let', 'return', 'if', 'else', 'while'}
+# Added 'print' for print statement, 'for' and 'to' for for-loop support
+KEYWORDS = {'let', 'return', 'if', 'else', 'while', 'print', 'for', 'to'}
 
 class Lexer:
     def __init__(self):
         self.rules = [
             ('WHITESPACE', r'\s+'),
+            # Single-line comments: // until end of line (skipped like whitespace)
+            ('COMMENT', r'//[^\n]*'),
             ('NUMBER', r'\d+'),
             ('IDENTIFIER', r'[a-zA-Z_]\w*'),
-            ('OPERATOR', r'==|<=|>=|<|>|[+\-*/=]'),
-            ('PUNCTUATION', r'[{}]')
+            # Operator ordering: multi-char ops (!=, ==, <=, >=) before single-char; added % for modulo
+            ('OPERATOR', r'==|!=|<=|>=|<|>|[+\-*/%=]'),
+            # Punctuation: braces and parentheses for grouping
+            ('PUNCTUATION', r'[{}()]')
         ]
         
     def tokenize(self, text):
@@ -30,7 +35,8 @@ class Lexer:
                 match = regex.match(text, pos)
                 if match:
                     value = match.group(0)
-                    if token_type != 'WHITESPACE':
+                    # Skip whitespace and comments (don't add to token list)
+                    if token_type not in ('WHITESPACE', 'COMMENT'):
                         # Check if the identifier is actually one of our new keywords
                         if token_type == 'IDENTIFIER' and value in KEYWORDS:
                             tokens.append(Token('KEYWORD', value))

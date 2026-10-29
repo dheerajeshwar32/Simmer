@@ -1,0 +1,19 @@
+// Nested if-else for grading system
+let marks = 82
+let result = 0
+
+if marks >= 90 {
+    result = 4
+} else {
+    if marks >= 80 {
+        result = 3
+    } else {
+        if marks >= 70 {
+            result = 2
+        } else {
+            result = 1
+        }
+    }
+}
+
+return result

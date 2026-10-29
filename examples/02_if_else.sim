@@ -1,0 +1,11 @@
+// If-else demonstration
+let score = 75
+let grade = 0
+
+if score >= 90 {
+    grade = 1
+} else {
+    grade = 0
+}
+
+return grade

@@ -1,5 +1,5 @@
 from lexer import Lexer
-from parser_simmer import Parser, Program, Declaration, Assignment, Return, BinOp, Number, Identifier, Condition, IfElse, WhileLoop
+from parser_simmer import Parser, Program, Declaration, Assignment, Return, BinOp, Number, Identifier, Condition, IfElse, WhileLoop, Print, ForLoop
 
 class SemanticAnalyzer:
     def __init__(self):
@@ -52,6 +52,19 @@ class SemanticAnalyzer:
         
     def visit_WhileLoop(self, node):
         self.analyze(node.condition)
+        for stmt in node.body:
+            self.analyze(stmt)
+
+    # Semantic visitor for print statement: validate the expression
+    def visit_Print(self, node):
+        self.analyze(node.value)
+
+    # Semantic visitor for for-loop: validate the loop variable is declared
+    def visit_ForLoop(self, node):
+        if node.var_name not in self.symbol_table:
+            raise Exception(f"Semantic Error: For-loop variable '{node.var_name}' must be declared before use.")
+        self.analyze(node.start)
+        self.analyze(node.end)
         for stmt in node.body:
             self.analyze(stmt)
 

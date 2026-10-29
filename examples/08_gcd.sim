@@ -1,0 +1,12 @@
+// GCD of 48 and 18 using Euclidean algorithm
+let a = 48
+let b = 18
+let temp = 0
+
+while b > 0 {
+    temp = b
+    b = a - (a / b) * b
+    a = temp
+}
+
+return a

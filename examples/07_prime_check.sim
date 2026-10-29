@@ -1,0 +1,13 @@
+// Check if 17 is prime (returns 1 if prime, 0 if not)
+let num = 17
+let divisor = 2
+let is_prime = 1
+
+while divisor * divisor <= num {
+    if num - (num / divisor) * divisor == 0 {
+        is_prime = 0
+    }
+    divisor = divisor + 1
+}
+
+return is_prime

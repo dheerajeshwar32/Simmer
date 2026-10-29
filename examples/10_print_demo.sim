@@ -1,0 +1,11 @@
+// Print statement demonstration
+let x = 42
+print x
+
+let y = x * 2
+print y
+
+let z = y + x
+print z
+
+return z

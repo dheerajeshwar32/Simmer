@@ -1,0 +1,10 @@
+// Compute factorial of 6 (6! = 720)
+let n = 6
+let fact = 1
+
+while n > 1 {
+    fact = fact * n
+    n = n - 1
+}
+
+return fact

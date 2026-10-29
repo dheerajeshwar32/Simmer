@@ -1,0 +1,11 @@
+// Compute 2^10 = 1024
+let base = 2
+let exp = 10
+let result = 1
+
+while exp > 0 {
+    result = result * base
+    exp = exp - 1
+}
+
+return result

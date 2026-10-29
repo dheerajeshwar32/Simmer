@@ -1,0 +1,5 @@
+// Modulo operator demonstration
+let a = 17
+let b = 5
+let remainder = a % b
+return remainder

@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simmer Studio — LLVM Compiler Workbench</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace'],
+                    },
+                    colors: {
+                        obsidian: {
+                            950: '#06080e',
+                            900: '#0a0e17',
+                            850: '#101623',
+                            800: '#161f30',
+                            700: '#1f2b42',
+                            600: '#2c3c5c',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #06080e;
+            color: #e2e8f0;
+            overflow-x: hidden;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0e17;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1f2b42;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #2c3c5c;
+        }
+        .code-font {
+            font-family: 'Fira Code', monospace;
+        }
+        /* AST Tree Lines */
+        .ast-branch {
+            position: relative;
+            padding-left: 1.5rem;
+            margin-left: 0.75rem;
+            border-left: 1px solid #1f2b42;
+        }
+        .ast-branch::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 1rem;
+            width: 1rem;
+            height: 1px;
+            background: #1f2b42;
+        }
+        .ast-branch:last-child {
+            border-left-color: transparent;
+        }
+        .ast-branch:last-child::before {
+            border-left: 1px solid #1f2b42;
+            height: 1rem;
+            top: 0;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans antialiased text-slate-200 bg-obsidian-950">
+
+    <!-- ============================================================ -->
+    <!-- TOP NAVIGATION BAR (Spacious, Uncluttered, Professional)       -->
+    <!-- ============================================================ -->
+    <header class="h-16 border-b border-obsidian-800 bg-obsidian-900/90 backdrop-blur-md px-6 flex items-center justify-between z-50">
+        
+        <!-- Left: Branding -->
+        <div class="flex items-center space-x-3 shrink-0">
+            <span class="text-2xl">🍲</span>
+            <div class="flex items-center space-x-2.5">
+                <span class="font-bold text-lg tracking-tight text-white">Simmer</span>
+                <span class="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono font-medium">Studio v1.2</span>
+                <span class="text-xs text-slate-500 hidden xl:inline">| LLVM Optimization Workbench</span>
+            </div>
+        </div>
+
+        <!-- Center: Benchmark Selector Dropdown -->
+        <div class="flex items-center space-x-3 mx-4 max-w-md w-full">
+            <div class="relative w-full">
+                <i class="fa-solid fa-code absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-500 pointer-events-none"></i>
+                <select id="exampleSelector" class="w-full bg-obsidian-850 hover:bg-obsidian-800 text-xs border border-obsidian-700/80 rounded-lg pl-9 pr-8 py-2 text-slate-200 focus:outline-none focus:border-emerald-500 transition cursor-pointer appearance-none truncate">
+                    <option value="" disabled selected>Select Benchmark Program...</option>
+                </select>
+                <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-500 pointer-events-none"></i>
+            </div>
+        </div>
+
+        <!-- Right: Actions & Compilation Controls -->
+        <div class="flex items-center space-x-3 shrink-0">
+            
+            <!-- Optimization Level Segmented Control -->
+            <div class="flex items-center bg-obsidian-850 rounded-lg p-1 border border-obsidian-700/80 text-xs">
+                <span class="text-slate-400 px-2 text-[11px] font-medium hidden sm:inline">PassBuilder:</span>
+                <button onclick="setOptLevel(0)" id="opt-0" class="opt-btn px-2.5 py-1 rounded text-slate-400 hover:text-white transition text-xs font-mono">-O0</button>
+                <button onclick="setOptLevel(1)" id="opt-1" class="opt-btn px-2.5 py-1 rounded text-slate-400 hover:text-white transition text-xs font-mono">-O1</button>
+                <button onclick="setOptLevel(2)" id="opt-2" class="opt-btn px-2.5 py-1 rounded text-slate-400 hover:text-white transition text-xs font-mono">-O2</button>
+                <button onclick="setOptLevel(3)" id="opt-3" class="opt-btn px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-400 font-semibold border border-emerald-500/30 transition text-xs font-mono">-O3</button>
+            </div>
+
+            <!-- Run Test Suite Trigger -->
+            <button onclick="switchTab('tests'); runTestSuite();" class="px-3.5 py-2 text-xs font-medium text-slate-300 bg-obsidian-850 hover:bg-obsidian-800 border border-obsidian-700/80 rounded-lg flex items-center space-x-2 transition shadow-sm">
+                <i class="fa-solid fa-vial-circle-check text-cyan-400"></i>
+                <span class="hidden sm:inline">30 Tests</span>
+            </button>
+
+            <!-- Compile & Run Primary Button -->
+            <button id="compileBtn" onclick="compileCurrentCode()" class="px-5 py-2 text-xs font-bold tracking-wide uppercase bg-emerald-500 hover:bg-emerald-400 text-obsidian-950 rounded-lg shadow-lg flex items-center space-x-2 transition active:scale-95">
+                <i class="fa-solid fa-play text-xs"></i>
+                <span>Compile & Run</span>
+                <kbd class="hidden md:inline-block text-[10px] bg-obsidian-950/20 text-obsidian-950 px-1.5 py-0.5 rounded font-mono ml-1 font-semibold">Ctrl+Enter</kbd>
+            </button>
+        </div>
+    </header>
+
+    <!-- ============================================================ -->
+    <!-- MAIN WORKSPACE: Clean 2-Pane Split                           -->
+    <!-- ============================================================ -->
+    <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden h-[calc(100vh-4rem)]">
+        
+        <!-- -------------------------------------------------------- -->
+        <!-- LEFT PANE: Source Code Editor (5 cols on lg)             -->
+        <!-- -------------------------------------------------------- -->
+        <section class="lg:col-span-5 border-r border-obsidian-800 flex flex-col bg-obsidian-950 h-full overflow-hidden">
+            
+            <!-- Editor Topbar -->
+            <div class="px-5 py-3 bg-obsidian-900 border-b border-obsidian-800 flex items-center justify-between text-xs">
+                <div class="flex items-center space-x-2.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                    <span id="currentFileName" class="font-mono text-slate-200 font-medium text-xs">05_fibonacci.sim</span>
+                    <span id="codeLengthBadge" class="text-slate-500 font-mono text-[11px]">(16 lines)</span>
+                </div>
+                <div class="flex items-center space-x-3 text-slate-400 text-xs">
+                    <button onclick="formatCodeSnippet()" title="Reset snippet" class="hover:text-white transition">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </button>
+                    <button onclick="copySourceCode()" title="Copy Code" class="hover:text-white transition">
+                        <i class="fa-regular fa-copy"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Snippet Pills (Single Clean Row) -->
+            <div class="px-5 py-2 bg-obsidian-900/60 border-b border-obsidian-800/80 flex items-center space-x-1.5 overflow-x-auto text-[11px]">
+                <span class="text-slate-500 text-[10px] font-semibold uppercase tracking-wider mr-1">Presets:</span>
+                <button onclick="loadExampleByName('05_fibonacci.sim')" class="px-2.5 py-1 bg-obsidian-850 hover:bg-obsidian-800 border border-obsidian-700/60 rounded text-slate-300 whitespace-nowrap transition">Fibonacci</button>
+                <button onclick="loadExampleByName('07_prime_check.sim')" class="px-2.5 py-1 bg-obsidian-850 hover:bg-obsidian-800 border border-obsidian-700/60 rounded text-slate-300 whitespace-nowrap transition">Prime Check</button>
+                <button onclick="loadExampleByName('13_collatz.sim')" class="px-2.5 py-1 bg-obsidian-850 hover:bg-obsidian-800 border border-obsidian-700/60 rounded text-slate-300 whitespace-nowrap transition">Collatz 27</button>
+                <button onclick="loadExampleByName('06_factorial.sim')" class="px-2.5 py-1 bg-obsidian-850 hover:bg-obsidian-800 border border-obsidian-700/60 rounded text-slate-300 whitespace-nowrap transition">Factorial 6!</button>
+                <button onclick="loadExampleByName('08_gcd.sim')" class="px-2.5 py-1 bg-obsidian-850 hover:bg-obsidian-800 border border-obsidian-700/60 rounded text-slate-300 whitespace-nowrap transition">GCD</button>
+                <button onclick="loadExampleByName('09_for_loop.sim')" class="px-2.5 py-1 bg-obsidian-850 hover:bg-obsidian-800 border border-obsidian-700/60 rounded text-slate-300 whitespace-nowrap transition">For Loop</button>
+                <button onclick="loadExampleByName('10_print_demo.sim')" class="px-2.5 py-1 bg-obsidian-850 hover:bg-obsidian-800 border border-obsidian-700/60 rounded text-slate-300 whitespace-nowrap transition">Print</button>
+            </div>
+
+            <!-- Code Editor Area -->
+            <div class="flex-1 flex overflow-hidden relative">
+                <!-- Line Numbers -->
+                <div id="lineNumbers" class="w-12 py-5 select-none bg-obsidian-950 text-right pr-3.5 font-mono text-xs text-slate-600 border-r border-obsidian-800/80 leading-6 overflow-hidden">
+                    1
+                </div>
+                <!-- Textarea Code Input -->
+                <textarea id="codeEditor" spellcheck="false" class="flex-1 bg-transparent text-slate-100 font-mono text-xs leading-6 p-5 resize-none focus:outline-none overflow-y-auto" placeholder="// Write Simmer source code here..."></textarea>
+            </div>
+
+            <!-- Error Banner (if any) -->
+            <div id="errorBanner" class="hidden p-4 bg-rose-950/40 border-t border-rose-500/40 text-xs">
+                <div class="flex items-start space-x-3">
+                    <i class="fa-solid fa-circle-exclamation text-rose-400 mt-0.5 text-sm"></i>
+                    <div class="flex-1">
+                        <div class="flex items-center justify-between">
+                            <span id="errorStageBadge" class="font-bold text-rose-300 uppercase tracking-wider text-[10px] px-2 py-0.5 rounded bg-rose-500/20 border border-rose-500/30">Compiler Error</span>
+                            <span class="text-[11px] text-slate-400">Compilation halted</span>
+                        </div>
+                        <p id="errorMessage" class="text-rose-200 mt-1 font-mono text-xs leading-relaxed"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Editor Status Footer -->
+            <div class="px-5 py-2 bg-obsidian-900 border-t border-obsidian-800 text-[11px] text-slate-500 flex items-center justify-between font-mono">
+                <span>Grammar: Simmer v1.2</span>
+                <span>Press Ctrl+Enter to re-compile</span>
+            </div>
+        </section>
+
+        <!-- -------------------------------------------------------- -->
+        <!-- RIGHT PANE: Pipeline Inspector (7 cols on lg)             -->
+        <!-- -------------------------------------------------------- -->
+        <section class="lg:col-span-7 flex flex-col bg-obsidian-900 h-full overflow-hidden">
+            
+            <!-- Spacious Studio Tab Bar -->
+            <nav class="flex items-center px-6 bg-obsidian-950 border-b border-obsidian-800 overflow-x-auto no-scrollbar space-x-2 py-1">
+                <button onclick="switchTab('overview')" id="tab-btn-overview" class="tab-btn active px-4 py-2.5 text-xs font-semibold rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center space-x-2 transition">
+                    <i class="fa-solid fa-gauge-high text-xs"></i>
+                    <span>Overview</span>
+                </button>
+                <button onclick="switchTab('tokens')" id="tab-btn-tokens" class="tab-btn px-4 py-2.5 text-xs font-medium rounded-lg text-slate-400 hover:text-slate-200 hover:bg-obsidian-850 flex items-center space-x-2 transition">
+                    <i class="fa-solid fa-font text-xs"></i>
+                    <span>Tokens</span>
+                    <span id="tokenCountBadge" class="text-[10px] px-1.5 py-0.2 rounded-full bg-obsidian-800 text-slate-400 font-mono">0</span>
+                </button>
+                <button onclick="switchTab('ast')" id="tab-btn-ast" class="tab-btn px-4 py-2.5 text-xs font-medium rounded-lg text-slate-400 hover:text-slate-200 hover:bg-obsidian-850 flex items-center space-x-2 transition">
+                    <i class="fa-solid fa-network-wired text-xs"></i>
+                    <span>AST Tree</span>
+                </button>
+                <button onclick="switchTab('semantic')" id="tab-btn-semantic" class="tab-btn px-4 py-2.5 text-xs font-medium rounded-lg text-slate-400 hover:text-slate-200 hover:bg-obsidian-850 flex items-center space-x-2 transition">
+                    <i class="fa-solid fa-shield-halved text-xs"></i>
+                    <span>Symbol Table</span>
+                </button>
+                <button onclick="switchTab('ir')" id="tab-btn-ir" class="tab-btn px-4 py-2.5 text-xs font-medium rounded-lg text-slate-400 hover:text-slate-200 hover:bg-obsidian-850 flex items-center space-x-2 transition">
+                    <i class="fa-solid fa-bolt text-xs"></i>
+                    <span>LLVM IR Diff</span>
+                </button>
+                <button onclick="switchTab('asm')" id="tab-btn-asm" class="tab-btn px-4 py-2.5 text-xs font-medium rounded-lg text-slate-400 hover:text-slate-200 hover:bg-obsidian-850 flex items-center space-x-2 transition">
+                    <i class="fa-solid fa-microchip text-xs"></i>
+                    <span>Assembly</span>
+                </button>
+                <button onclick="switchTab('tests')" id="tab-btn-tests" class="tab-btn px-4 py-2.5 text-xs font-medium rounded-lg text-slate-400 hover:text-slate-200 hover:bg-obsidian-850 flex items-center space-x-2 transition">
+                    <i class="fa-solid fa-flask text-xs"></i>
+                    <span>Test Suite</span>
+                </button>
+            </nav>
+
+            <!-- Tab Contents (Comfortable Padding & Spacing) -->
+            <div class="flex-1 overflow-y-auto p-8 space-y-6">
+
+                <!-- ------------------------------------------------ -->
+                <!-- TAB 1: OVERVIEW & METRICS (Redesigned & Clean)    -->
+                <!-- ------------------------------------------------ -->
+                <div id="tab-overview" class="tab-pane space-y-6">
+                    
+                    <!-- Sleek Unified Stats Ribbon (Replaces 4 bulky cards) -->
+                    <div class="bg-obsidian-950 border border-obsidian-800 rounded-2xl p-6 shadow-sm">
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 divide-y md:divide-y-0 md:divide-x divide-obsidian-800">
+                            
+                            <!-- Stat 1: Instructions -->
+                            <div class="space-y-1">
+                                <span class="text-slate-400 text-xs uppercase tracking-wider font-medium">Instructions</span>
+                                <div class="flex items-baseline space-x-2.5 pt-1">
+                                    <span id="kpiBefore" class="text-xl font-bold font-mono text-slate-400">20</span>
+                                    <span class="text-slate-600 font-mono">→</span>
+                                    <span id="kpiAfter" class="text-2xl font-bold font-mono text-emerald-400">6</span>
+                                </div>
+                                <span id="kpiDiff" class="text-xs text-slate-500 font-mono block">14 eliminated</span>
+                            </div>
+
+                            <!-- Stat 2: Efficiency -->
+                            <div class="space-y-1 md:pl-6 pt-4 md:pt-0">
+                                <span class="text-slate-400 text-xs uppercase tracking-wider font-medium">Efficiency Gain</span>
+                                <div class="flex items-baseline space-x-1 pt-1">
+                                    <span id="kpiReduction" class="text-2xl font-bold font-mono text-teal-400">70.0%</span>
+                                </div>
+                                <span class="text-xs text-teal-400/80 font-mono block">Redundant code cut</span>
+                            </div>
+
+                            <!-- Stat 3: JIT Result -->
+                            <div class="space-y-1 md:pl-6 pt-4 md:pt-0">
+                                <span class="text-slate-400 text-xs uppercase tracking-wider font-medium">JIT Exit Code</span>
+                                <div class="flex items-baseline space-x-1 pt-1">
+                                    <span id="kpiExitCode" class="text-2xl font-bold font-mono text-cyan-400">55</span>
+                                </div>
+                                <span class="text-xs text-cyan-400/80 font-mono block">In-Memory MCJIT</span>
+                            </div>
+
+                            <!-- Stat 4: Latency -->
+                            <div class="space-y-1 md:pl-6 pt-4 md:pt-0">
+                                <span class="text-slate-400 text-xs uppercase tracking-wider font-medium">Total Latency</span>
+                                <div class="flex items-baseline space-x-1 pt-1">
+                                    <span id="kpiLatency" class="text-2xl font-bold font-mono text-violet-400">17.9</span>
+                                    <span class="text-xs text-slate-500 font-mono">ms</span>
+                                </div>
+                                <span class="text-xs text-violet-400/80 font-mono block">Frontend + PassBuilder</span>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- Live Terminal Output Card (Clean Windowed Console) -->
+                    <div class="bg-obsidian-950 rounded-2xl overflow-hidden border border-obsidian-800 shadow-sm">
+                        <!-- Terminal Titlebar with macOS dots -->
+                        <div class="px-5 py-3 bg-obsidian-900 border-b border-obsidian-800 flex items-center justify-between">
+                            <div class="flex items-center space-x-2.5">
+                                <span class="w-3 h-3 rounded-full bg-rose-500/80 inline-block"></span>
+                                <span class="w-3 h-3 rounded-full bg-amber-500/80 inline-block"></span>
+                                <span class="w-3 h-3 rounded-full bg-emerald-500/80 inline-block"></span>
+                                <span class="ml-2 font-mono text-xs text-slate-300 font-medium">Live JIT Terminal Console</span>
+                            </div>
+                            <span class="text-[11px] text-slate-500 font-mono">stdout / printf runtime</span>
+                        </div>
+                        <!-- Terminal Logs Body -->
+                        <div class="p-6 font-mono text-xs text-slate-200 min-h-[140px] max-h-[220px] overflow-y-auto leading-relaxed">
+                            <div id="terminalOutput" class="text-emerald-400">
+                                <div><span class="text-slate-500">// Simmer Compiler v1.2 Execution Log</span></div>
+                                <div class="mt-1 font-bold text-emerald-400">✓ Program exited with code: 55</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pipeline Stage Execution Stepper (Spacious Horizontal Track) -->
+                    <div class="bg-obsidian-950 rounded-2xl p-6 border border-obsidian-800 space-y-4 shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <h4 class="text-xs uppercase tracking-wider font-semibold text-slate-400 flex items-center space-x-2">
+                                <i class="fa-solid fa-diagram-project text-cyan-400"></i>
+                                <span>End-to-End Pipeline Execution Trace</span>
+                            </h4>
+                            <span class="text-[11px] text-emerald-400 font-mono font-medium">7 / 7 Phases Passed ✓</span>
+                        </div>
+                        
+                        <!-- Responsive Horizontal Stepper Grid -->
+                        <div id="pipelineTimeline" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+                            <!-- Injected by JavaScript -->
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- ------------------------------------------------ -->
+                <!-- TAB 2: LEXER TOKENS                              -->
+                <!-- ------------------------------------------------ -->
+                <div id="tab-tokens" class="tab-pane hidden space-y-5">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-semibold text-slate-200">Tokenized Lexeme Stream</h3>
+                            <p class="text-xs text-slate-400 mt-0.5">Stream of lexical tokens generated by regex pattern matching.</p>
+                        </div>
+                        <input id="tokenSearchInput" oninput="filterTokens()" type="text" placeholder="Filter tokens..." class="bg-obsidian-850 border border-obsidian-700 text-xs px-3.5 py-2 rounded-lg w-56 text-slate-200 focus:outline-none focus:border-emerald-500">
+                    </div>
+
+                    <!-- Token Chips Grid -->
+                    <div id="tokenGrid" class="flex flex-wrap gap-2.5 max-h-[500px] overflow-y-auto p-6 bg-obsidian-950 rounded-2xl border border-obsidian-800">
+                        <p class="text-xs text-slate-500 font-mono">No tokens yet. Compile code to see tokens.</p>
+                    </div>
+
+                    <!-- Token Legend -->
+                    <div class="flex items-center space-x-6 text-xs text-slate-400 pt-2">
+                        <span class="flex items-center space-x-2"><span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span><span>KEYWORD</span></span>
+                        <span class="flex items-center space-x-2"><span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span><span>IDENTIFIER</span></span>
+                        <span class="flex items-center space-x-2"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span><span>NUMBER</span></span>
+                        <span class="flex items-center space-x-2"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span><span>OPERATOR</span></span>
+                        <span class="flex items-center space-x-2"><span class="w-2.5 h-2.5 rounded-full bg-slate-500"></span><span>PUNCTUATION</span></span>
+                    </div>
+                </div>
+
+                <!-- ------------------------------------------------ -->
+                <!-- TAB 3: INTERACTIVE AST                           -->
+                <!-- ------------------------------------------------ -->
+                <div id="tab-ast" class="tab-pane hidden space-y-5">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-semibold text-slate-200">Abstract Syntax Tree (AST)</h3>
+                            <p class="text-xs text-slate-400 mt-0.5">Built by hand-rolled Recursive-Descent Parser with precedence climbing.</p>
+                        </div>
+                        <button onclick="toggleAstRawView()" id="astToggleBtn" class="px-3.5 py-1.5 bg-obsidian-850 hover:bg-obsidian-800 border border-obsidian-700 text-xs rounded-lg text-slate-300 transition">
+                            <i class="fa-solid fa-code mr-1.5"></i> Switch to Raw View
+                        </button>
+                    </div>
+
+                    <!-- Visual Tree Container -->
+                    <div id="astTreeContainer" class="p-8 bg-obsidian-950 rounded-2xl border border-obsidian-800 max-h-[580px] overflow-y-auto">
+                        <div id="astTreeRoot" class="space-y-3">
+                            <p class="text-xs text-slate-500 font-mono">Compile code to inspect the generated Abstract Syntax Tree.</p>
+                        </div>
+                    </div>
+
+                    <!-- Raw AST Container -->
+                    <div id="astRawContainer" class="hidden p-6 bg-obsidian-950 rounded-2xl border border-obsidian-800 max-h-[580px] overflow-y-auto">
+                        <pre id="astRawText" class="font-mono text-xs text-emerald-400 leading-relaxed"></pre>
+                    </div>
+                </div>
+
+                <!-- ------------------------------------------------ -->
+                <!-- TAB 4: SEMANTIC & SYMBOL TABLE                   -->
+                <!-- ------------------------------------------------ -->
+                <div id="tab-semantic" class="tab-pane hidden space-y-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-semibold text-slate-200">Semantic Symbol Table</h3>
+                            <p class="text-xs text-slate-400 mt-0.5">Static analysis phase verifying declarations, scope resolution, and duplicate defense.</p>
+                        </div>
+                        <span class="px-3 py-1 rounded-full text-xs font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center space-x-1.5">
+                            <i class="fa-solid fa-check"></i>
+                            <span>Scope Validated</span>
+                        </span>
+                    </div>
+
+                    <!-- Registered Variables Grid -->
+                    <div class="bg-obsidian-950 p-6 rounded-2xl border border-obsidian-800 space-y-4">
+                        <h4 class="text-xs uppercase tracking-wider font-semibold text-slate-400">Variables in Active Symbol Table</h4>
+                        <div id="symbolTableGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5">
+                            <p class="text-xs text-slate-500 font-mono col-span-full">No variables declared yet.</p>
+                        </div>
+                    </div>
+
+                    <!-- Compile-time Defensive Invariants -->
+                    <div class="bg-obsidian-950 p-6 rounded-2xl border border-obsidian-800 space-y-3.5">
+                        <h4 class="text-xs uppercase tracking-wider font-semibold text-slate-400">Compile-Time Safety Invariants</h4>
+                        <div class="space-y-2.5 text-xs font-mono">
+                            <div class="p-3.5 bg-obsidian-900 rounded-xl flex items-center justify-between">
+                                <span class="text-slate-300">1. Declaration Precedence</span>
+                                <span class="text-emerald-400 text-xs font-semibold"><i class="fa-solid fa-shield mr-1.5"></i>Enforced (let required)</span>
+                            </div>
+                            <div class="p-3.5 bg-obsidian-900 rounded-xl flex items-center justify-between">
+                                <span class="text-slate-300">2. Duplicate Declaration Defense</span>
+                                <span class="text-emerald-400 text-xs font-semibold"><i class="fa-solid fa-shield mr-1.5"></i>Protected (Error on re-decl)</span>
+                            </div>
+                            <div class="p-3.5 bg-obsidian-900 rounded-xl flex items-center justify-between">
+                                <span class="text-slate-300">3. Scope & Identifier Resolution</span>
+                                <span class="text-emerald-400 text-xs font-semibold"><i class="fa-solid fa-shield mr-1.5"></i>Resolved against symbol table</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ------------------------------------------------ -->
+                <!-- TAB 5: LLVM IR DIFF                              -->
+                <!-- ------------------------------------------------ -->
+                <div id="tab-ir" class="tab-pane hidden space-y-5">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-semibold text-slate-200">LLVM Intermediate Representation (IR)</h3>
+                            <p class="text-xs text-slate-400 mt-0.5">Side-by-side comparison of Raw IR vs. LLVM PassBuilder (<span id="irOptLabel" class="font-mono text-emerald-400">-O3</span>).</p>
+                        </div>
+                        <span id="irDiffBadge" class="px-3 py-1 text-xs font-mono rounded-lg bg-teal-500/10 text-teal-300 border border-teal-500/20">14 instructions eliminated</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <!-- Raw IR (Left) -->
+                        <div class="bg-obsidian-950 rounded-2xl overflow-hidden border border-obsidian-800">
+                            <div class="px-5 py-3 bg-obsidian-900 border-b border-obsidian-800 flex items-center justify-between text-xs">
+                                <span class="font-mono text-amber-400 font-semibold"><i class="fa-solid fa-file-code mr-1.5"></i>Raw LLVM IR (Pre-Optimization)</span>
+                                <span id="rawIrLineCount" class="text-slate-500 font-mono text-[11px]">0 lines</span>
+                            </div>
+                            <pre id="rawIrText" class="p-5 font-mono text-xs text-slate-300 leading-relaxed max-h-[500px] overflow-y-auto">; Compile code to generate LLVM IR</pre>
+                        </div>
+
+                        <!-- Optimized IR (Right) -->
+                        <div class="bg-obsidian-950 rounded-2xl overflow-hidden border border-emerald-500/30">
+                            <div class="px-5 py-3 bg-obsidian-900 border-b border-emerald-500/20 flex items-center justify-between text-xs">
+                                <span class="font-mono text-emerald-400 font-semibold"><i class="fa-solid fa-bolt mr-1.5"></i>Optimized LLVM IR (Post-PassBuilder)</span>
+                                <span id="optIrLineCount" class="text-slate-500 font-mono text-[11px]">0 lines</span>
+                            </div>
+                            <pre id="optIrText" class="p-5 font-mono text-xs text-emerald-300 leading-relaxed max-h-[500px] overflow-y-auto">; Optimized IR will appear here</pre>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ------------------------------------------------ -->
+                <!-- TAB 6: ASSEMBLY & BINARY EMISSION                -->
+                <!-- ------------------------------------------------ -->
+                <div id="tab-asm" class="tab-pane hidden space-y-5">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-semibold text-slate-200">Native Target Machine Assembly</h3>
+                            <p class="text-xs text-slate-400 mt-0.5">Emitted machine target architecture: <span id="targetTripleLabel" class="font-mono text-cyan-400">host</span></p>
+                        </div>
+                        <div class="flex items-center space-x-2.5">
+                            <a href="/api/download/asm" class="px-3.5 py-2 bg-obsidian-850 hover:bg-obsidian-800 text-xs font-mono text-slate-200 border border-obsidian-700 rounded-lg flex items-center space-x-2 transition">
+                                <i class="fa-solid fa-download text-emerald-400"></i>
+                                <span>Download .s</span>
+                            </a>
+                            <a href="/api/download/obj" class="px-3.5 py-2 bg-obsidian-850 hover:bg-obsidian-800 text-xs font-mono text-slate-200 border border-obsidian-700 rounded-lg flex items-center space-x-2 transition">
+                                <i class="fa-solid fa-file-binary text-cyan-400"></i>
+                                <span>Download .o</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Assembly Code Viewer -->
+                    <div class="bg-obsidian-950 rounded-2xl overflow-hidden border border-obsidian-800">
+                        <div class="px-5 py-3 bg-obsidian-900 border-b border-obsidian-800 flex items-center justify-between text-xs">
+                            <span class="font-mono text-slate-300 font-semibold"><i class="fa-solid fa-microchip mr-1.5 text-cyan-400"></i>Target x86_64 Assembly Code</span>
+                            <span id="asmLineCount" class="text-slate-500 font-mono text-[11px]">0 lines</span>
+                        </div>
+                        <pre id="asmText" class="p-6 font-mono text-xs text-cyan-200 leading-relaxed max-h-[500px] overflow-y-auto">; Compile code to view target assembly</pre>
+                    </div>
+                </div>
+
+                <!-- ------------------------------------------------ -->
+                <!-- TAB 7: TEST SUITE RUNNER                         -->
+                <!-- ------------------------------------------------ -->
+                <div id="tab-tests" class="tab-pane hidden space-y-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-semibold text-slate-200">Automated Correctness Test Suite</h3>
+                            <p class="text-xs text-slate-400 mt-0.5">Executes all 30 language tests in-memory to prove compiler correctness.</p>
+                        </div>
+                        <button id="runTestsBtn" onclick="runTestSuite()" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-obsidian-950 font-bold text-xs rounded-lg flex items-center space-x-2 transition">
+                            <i class="fa-solid fa-play"></i>
+                            <span>Execute 30 Tests</span>
+                        </button>
+                    </div>
+
+                    <!-- Metrics Ribbon -->
+                    <div class="grid grid-cols-3 gap-5">
+                        <div class="bg-obsidian-950 p-5 rounded-2xl border border-obsidian-800">
+                            <span class="text-slate-400 text-xs uppercase tracking-wider font-medium">Total Test Cases</span>
+                            <span id="testTotalCount" class="text-2xl font-bold font-mono text-slate-200 block mt-1">30</span>
+                        </div>
+                        <div class="bg-obsidian-950 p-5 rounded-2xl border border-obsidian-800">
+                            <span class="text-slate-400 text-xs uppercase tracking-wider font-medium">Passed</span>
+                            <span id="testPassedCount" class="text-2xl font-bold font-mono text-emerald-400 block mt-1">--</span>
+                        </div>
+                        <div class="bg-obsidian-950 p-5 rounded-2xl border border-obsidian-800">
+                            <span class="text-slate-400 text-xs uppercase tracking-wider font-medium">Failed</span>
+                            <span id="testFailedCount" class="text-2xl font-bold font-mono text-rose-400 block mt-1">--</span>
+                        </div>
+                    </div>
+
+                    <!-- Tests Breakdown Table -->
+                    <div class="bg-obsidian-950 rounded-2xl overflow-hidden border border-obsidian-800 shadow-sm">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-obsidian-900 text-slate-400 font-mono uppercase text-[10px] border-b border-obsidian-800">
+                                <tr>
+                                    <th class="px-5 py-3">#</th>
+                                    <th class="px-5 py-3">Test Name</th>
+                                    <th class="px-5 py-3">Expected Result</th>
+                                    <th class="px-5 py-3">Actual Result</th>
+                                    <th class="px-5 py-3">Latency</th>
+                                    <th class="px-5 py-3">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="testTableBody" class="divide-y divide-obsidian-800 font-mono text-slate-300">
+                                <tr>
+                                    <td colspan="6" class="px-5 py-8 text-center text-slate-500">Click 'Execute 30 Tests' to run in-memory test suite.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <!-- ============================================================ -->
+    <!-- APPLICATION JAVASCRIPT                                       -->
+    <!-- ============================================================ -->
+    <script>
+        let currentOptLevel = 3;
+        let allExamples = [];
+        let isAstRawView = false;
+        let lastTokens = [];
+
+        const codeEditor = document.getElementById('codeEditor');
+        const lineNumbers = document.getElementById('lineNumbers');
+        const exampleSelector = document.getElementById('exampleSelector');
+        const currentFileName = document.getElementById('currentFileName');
+        const codeLengthBadge = document.getElementById('codeLengthBadge');
+        const errorBanner = document.getElementById('errorBanner');
+        const errorStageBadge = document.getElementById('errorStageBadge');
+        const errorMessage = document.getElementById('errorMessage');
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            await loadExamplesList();
+            setupEditorEvents();
+            if (codeEditor.value.trim().length > 0) {
+                compileCurrentCode();
+            }
+        });
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.className = "tab-btn px-4 py-2.5 text-xs font-medium rounded-lg text-slate-400 hover:text-slate-200 hover:bg-obsidian-850 flex items-center space-x-2 transition";
+            });
+
+            const activeTab = document.getElementById(`tab-${tabId}`);
+            const activeBtn = document.getElementById(`tab-btn-${tabId}`);
+            if (activeTab) activeTab.classList.remove('hidden');
+            if (activeBtn) {
+                activeBtn.className = "tab-btn active px-4 py-2.5 text-xs font-semibold rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center space-x-2 transition";
+            }
+        }
+
+        function setOptLevel(level) {
+            currentOptLevel = level;
+            document.querySelectorAll('.opt-btn').forEach(btn => {
+                btn.className = "opt-btn px-2.5 py-1 rounded text-slate-400 hover:text-white transition text-xs font-mono";
+            });
+            const active = document.getElementById(`opt-${level}`);
+            if (active) {
+                active.className = "opt-btn px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-400 font-semibold border border-emerald-500/30 transition text-xs font-mono";
+            }
+            compileCurrentCode();
+        }
+
+        async function loadExamplesList() {
+            try {
+                const res = await fetch('/api/examples');
+                allExamples = await res.json();
+                exampleSelector.innerHTML = '<option value="" disabled>Select Benchmark Program...</option>';
+                allExamples.forEach(ex => {
+                    const opt = document.createElement('option');
+                    opt.value = ex.filename;
+                    opt.textContent = `${ex.filename} — ${ex.title}`;
+                    exampleSelector.appendChild(opt);
+                });
+
+                const defaultEx = allExamples.find(e => e.filename.includes('05_fibonacci')) || allExamples[0];
+                if (defaultEx) {
+                    loadExample(defaultEx);
+                    exampleSelector.value = defaultEx.filename;
+                }
+            } catch (err) {
+                console.error("Failed to fetch examples:", err);
+            }
+        }
+
+        exampleSelector.addEventListener('change', (e) => {
+            const ex = allExamples.find(item => item.filename === e.target.value);
+            if (ex) loadExample(ex);
+        });
+
+        function loadExampleByName(filename) {
+            const ex = allExamples.find(item => item.filename === filename);
+            if (ex) {
+                exampleSelector.value = filename;
+                loadExample(ex);
+            }
+        }
+
+        function loadExample(ex) {
+            codeEditor.value = ex.code;
+            currentFileName.textContent = ex.filename;
+            updateLineNumbers();
+            compileCurrentCode();
+        }
+
+        function setupEditorEvents() {
+            codeEditor.addEventListener('input', updateLineNumbers);
+            codeEditor.addEventListener('scroll', () => {
+                lineNumbers.scrollTop = codeEditor.scrollTop;
+            });
+
+            codeEditor.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    compileCurrentCode();
+                }
+                if (e.key === 'Tab') {
+                    e.preventDefault();
+                    const start = codeEditor.selectionStart;
+                    const end = codeEditor.selectionEnd;
+                    codeEditor.value = codeEditor.value.substring(0, start) + '    ' + codeEditor.value.substring(end);
+                    codeEditor.selectionStart = codeEditor.selectionEnd = start + 4;
+                    updateLineNumbers();
+                }
+            });
+        }
+
+        function updateLineNumbers() {
+            const lines = codeEditor.value.split('\n');
+            const count = lines.length;
+            codeLengthBadge.textContent = `(${count} lines)`;
+            lineNumbers.innerHTML = Array.from({ length: count }, (_, i) => i + 1).join('<br>');
+        }
+
+        function copySourceCode() {
+            navigator.clipboard.writeText(codeEditor.value);
+            alert("Simmer source code copied to clipboard!");
+        }
+
+        async function compileCurrentCode() {
+            const code = codeEditor.value;
+            const compileBtn = document.getElementById('compileBtn');
+            compileBtn.disabled = true;
+            compileBtn.classList.add('opacity-75');
+
+            try {
+                const res = await fetch('/api/compile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        code: code,
+                        opt_level: currentOptLevel,
+                        name: currentFileName.textContent.replace('.sim', '')
+                    })
+                });
+
+                const data = await res.json();
+                renderCompilationResults(data);
+            } catch (err) {
+                console.error("Compilation request failed:", err);
+            } finally {
+                compileBtn.disabled = false;
+                compileBtn.classList.remove('opacity-75');
+            }
+        }
+
+        function renderCompilationResults(data) {
+            if (!data.success) {
+                errorBanner.classList.remove('hidden');
+                errorStageBadge.textContent = data.error_stage || 'Compilation Error';
+                errorMessage.textContent = data.error;
+                document.getElementById('terminalOutput').innerHTML = `<span class="text-rose-400 font-bold">✗ [${data.error_stage}]</span>\n${data.error}`;
+                return;
+            } else {
+                errorBanner.classList.add('hidden');
+            }
+
+            // 1. Overview KPIs
+            const metrics = data.metrics || {};
+            document.getElementById('kpiBefore').textContent = metrics.before ?? '--';
+            document.getElementById('kpiAfter').textContent = metrics.after ?? '--';
+            document.getElementById('kpiDiff').textContent = `${metrics.eliminated ?? 0} eliminated`;
+            document.getElementById('kpiReduction').textContent = `${metrics.reduction_pct ?? 0}%`;
+            document.getElementById('kpiExitCode').textContent = data.jit_result ?? '--';
+            document.getElementById('kpiLatency').textContent = data.total_time_ms ?? '0.0';
+
+            // Terminal Console
+            const term = document.getElementById('terminalOutput');
+            let termHtml = `<span class="text-slate-500">// Simmer Compiler v1.2 Execution Log</span>\n`;
+            if (data.stdout && data.stdout.length > 0) {
+                termHtml += `<span class="text-cyan-300">${escapeHtml(data.stdout)}</span>\n`;
+            }
+            termHtml += `<span class="text-emerald-400 font-bold">✓ Program exited with code: ${data.jit_result}</span>`;
+            term.innerHTML = termHtml;
+
+            // Pipeline Stepper
+            renderPipelineTimeline(data.stages || []);
+
+            // 2. Lexer Tokens Tab
+            lastTokens = data.tokens || [];
+            document.getElementById('tokenCountBadge').textContent = lastTokens.length;
+            renderTokens(lastTokens);
+
+            // 3. AST Tree Tab
+            renderAstTree(data.ast_tree);
+            document.getElementById('astRawText').textContent = data.ast_raw || '';
+
+            // 4. Semantic Symbol Table Tab
+            renderSymbolTable(data.symbols || []);
+
+            // 5. LLVM IR Tab
+            document.getElementById('rawIrText').textContent = data.raw_ir || '; No IR generated';
+            document.getElementById('optIrText').textContent = data.optimized_ir || '; No optimized IR';
+            document.getElementById('rawIrLineCount').textContent = `${(data.raw_ir || '').split('\n').length} lines`;
+            document.getElementById('optIrLineCount').textContent = `${(data.optimized_ir || '').split('\n').length} lines`;
+            document.getElementById('irOptLabel').textContent = `-O${metrics.opt_level ?? 3}`;
+            document.getElementById('irDiffBadge').textContent = `${metrics.eliminated ?? 0} instructions eliminated (${metrics.reduction_pct ?? 0}%)`;
+
+            // 6. Assembly Tab
+            document.getElementById('asmText').textContent = data.asm_code || '; No assembly';
+            document.getElementById('asmLineCount').textContent = `${(data.asm_code || '').split('\n').length} lines`;
+            document.getElementById('targetTripleLabel').textContent = data.target_triple || 'host';
+        }
+
+        function renderPipelineTimeline(stages) {
+            const container = document.getElementById('pipelineTimeline');
+            container.innerHTML = stages.map((s, idx) => `
+                <div class="p-3 bg-obsidian-900 rounded-xl border border-obsidian-800 flex flex-col justify-between hover:border-emerald-500/40 transition">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] text-emerald-400 font-mono font-bold uppercase">${idx + 1}. ${s.name}</span>
+                        <i class="fa-solid fa-check text-[10px] text-emerald-400"></i>
+                    </div>
+                    <span class="text-slate-200 font-medium text-xs mt-2 truncate" title="${s.summary}">${s.summary}</span>
+                    <span class="text-[10px] text-slate-500 font-mono mt-1.5">${s.time_ms} ms</span>
+                </div>
+            `).join('');
+        }
+
+        function renderTokens(tokens) {
+            const grid = document.getElementById('tokenGrid');
+            if (!tokens || tokens.length === 0) {
+                grid.innerHTML = '<p class="text-xs text-slate-500 font-mono">No tokens generated.</p>';
+                return;
+            }
+
+            const colorMap = {
+                'KEYWORD': 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+                'IDENTIFIER': 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
+                'NUMBER': 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+                'OPERATOR': 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+                'PUNCTUATION': 'bg-slate-500/10 text-slate-400 border-slate-500/20',
+            };
+
+            grid.innerHTML = tokens.map((tok, i) => {
+                const color = colorMap[tok.type] || 'bg-slate-800 text-slate-300 border-obsidian-700';
+                return `
+                    <div class="px-3 py-1.5 rounded-lg border ${color} font-mono text-xs flex items-center space-x-2 shadow-sm">
+                        <span class="text-[10px] opacity-40">${i}</span>
+                        <span class="font-bold text-slate-100">${escapeHtml(tok.value)}</span>
+                        <span class="text-[9px] uppercase tracking-wider opacity-60">${tok.type}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterTokens() {
+            const q = document.getElementById('tokenSearchInput').value.toLowerCase();
+            const filtered = lastTokens.filter(t => t.value.toLowerCase().includes(q) || t.type.toLowerCase().includes(q));
+            renderTokens(filtered);
+        }
+
+        function renderAstTree(node) {
+            const root = document.getElementById('astTreeRoot');
+            if (!node) {
+                root.innerHTML = '<p class="text-xs text-slate-500 font-mono">No AST available.</p>';
+                return;
+            }
+            root.innerHTML = buildAstNodeHtml(node);
+        }
+
+        function buildAstNodeHtml(node) {
+            if (!node) return '';
+            const badgeColorMap = {
+                'blue': 'bg-blue-500/15 text-blue-300 border-blue-500/30',
+                'amber': 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+                'emerald': 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+                'purple': 'bg-purple-500/15 text-purple-300 border-purple-500/30',
+                'rose': 'bg-rose-500/15 text-rose-300 border-rose-500/30',
+                'teal': 'bg-teal-500/15 text-teal-300 border-teal-500/30',
+                'cyan': 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30',
+                'sky': 'bg-sky-500/15 text-sky-300 border-sky-500/30',
+            };
+            const badgeClass = badgeColorMap[node.badgeColor] || 'bg-obsidian-800 text-slate-400 border-obsidian-700';
+
+            const hasChildren = node.children && node.children.length > 0;
+            const childrenHtml = hasChildren ? node.children.map(buildAstNodeHtml).join('') : '';
+
+            return `
+                <div class="ast-branch font-mono text-xs">
+                    <div class="inline-flex items-center space-x-2.5 py-1.5 px-3 rounded-xl bg-obsidian-900 border border-obsidian-800 hover:border-obsidian-700 transition">
+                        <span class="text-slate-200 font-medium">${escapeHtml(node.label || node.type)}</span>
+                        ${node.badge ? `<span class="text-[10px] px-2 py-0.5 rounded border font-semibold ${badgeClass}">${escapeHtml(node.badge)}</span>` : ''}
+                    </div>
+                    ${hasChildren ? `<div class="mt-1.5">${childrenHtml}</div>` : ''}
+                </div>
+            `;
+        }
+
+        function toggleAstRawView() {
+            isAstRawView = !isAstRawView;
+            document.getElementById('astTreeContainer').classList.toggle('hidden', isAstRawView);
+            document.getElementById('astRawContainer').classList.toggle('hidden', !isAstRawView);
+            document.getElementById('astToggleBtn').innerHTML = isAstRawView 
+                ? '<i class="fa-solid fa-network-wired mr-1.5"></i> Switch to Tree View'
+                : '<i class="fa-solid fa-code mr-1.5"></i> Switch to Raw View';
+        }
+
+        function renderSymbolTable(symbols) {
+            const grid = document.getElementById('symbolTableGrid');
+            if (!symbols || symbols.length === 0) {
+                grid.innerHTML = '<p class="text-xs text-slate-500 font-mono col-span-full">No declared variables in current scope.</p>';
+                return;
+            }
+            grid.innerHTML = symbols.map(sym => `
+                <div class="p-4 bg-obsidian-900 rounded-xl border border-obsidian-800 flex items-center justify-between font-mono text-xs">
+                    <div class="flex items-center space-x-2.5">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                        <span class="text-slate-100 font-semibold">${sym}</span>
+                    </div>
+                    <span class="text-[10px] text-slate-500 uppercase font-mono">i32</span>
+                </div>
+            `).join('');
+        }
+
+        async function runTestSuite() {
+            const btn = document.getElementById('runTestsBtn');
+            btn.disabled = true;
+            btn.classList.add('opacity-75');
+
+            const tbody = document.getElementById('testTableBody');
+            tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-cyan-400 font-mono"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Running in-memory test suite...</td></tr>';
+
+            try {
+                const res = await fetch('/api/run-tests', { method: 'POST' });
+                const data = await res.json();
+
+                document.getElementById('testTotalCount').textContent = data.total;
+                document.getElementById('testPassedCount').textContent = data.passed;
+                document.getElementById('testFailedCount').textContent = data.failed;
+
+                tbody.innerHTML = data.results.map((t, idx) => {
+                    const isPass = t.status === 'pass';
+                    return `
+                        <tr class="hover:bg-obsidian-850/50 transition">
+                            <td class="px-5 py-3 text-slate-500">${idx + 1}</td>
+                            <td class="px-5 py-3 font-medium text-slate-200">${escapeHtml(t.name)}</td>
+                            <td class="px-5 py-3 text-slate-400">${t.expected}</td>
+                            <td class="px-5 py-3 ${isPass ? 'text-emerald-400' : 'text-rose-400'} font-bold">${t.actual}</td>
+                            <td class="px-5 py-3 text-slate-500 text-[11px]">${t.time_ms} ms</td>
+                            <td class="px-5 py-3">
+                                <span class="px-2.5 py-1 rounded text-[10px] font-bold uppercase ${isPass ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'}">
+                                    ${isPass ? '✓ PASS' : '✗ FAIL'}
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="6" class="px-5 py-4 text-rose-400 font-mono">Failed to run test suite: ${err.message}</td></tr>`;
+            } finally {
+                btn.disabled = false;
+                btn.classList.remove('opacity-75');
+            }
+        }
+
+        function escapeHtml(text) {
+            return String(text)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
