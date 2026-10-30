@@ -2,11 +2,16 @@
 > **A high-performance Domain-Specific Language (DSL) and compiler translating high-level scripts into optimized native machine code.**  
 > Hand-rolled recursive-descent frontend · Industrial-grade LLVM backend · JIT & AOT execution.
 
+[![Live Web Playground](https://img.shields.io/badge/Live%20Playground-Render-46E3B7.svg?style=for-the-badge&logo=render)](https://simmer-6v9k.onrender.com/)
+[![GitHub Repo](https://img.shields.io/badge/GitHub-Repository-181717.svg?style=for-the-badge&logo=github)](https://github.com/dheerajeshwar32/Simmer)
+
 [![Language](https://img.shields.io/badge/Language-Python%203.10%2B-blue.svg)](https://python.org)
 [![Backend](https://img.shields.io/badge/Backend-LLVM%20via%20llvmlite-green.svg)](https://llvmlite.readthedocs.io/)
 [![Architecture](https://img.shields.io/badge/Architecture-x86__64%20%2F%20ARM64-orange.svg)]()
 [![Tests](https://img.shields.io/badge/Tests-30%2F30%20Passing-brightgreen.svg)]()
 [![Course](https://img.shields.io/badge/Course-BCSE307P%20Compiler%20Design-purple.svg)]()
+
+> 🌐 **Live Web Playground**: [https://simmer-6v9k.onrender.com/](https://simmer-6v9k.onrender.com/)
 
 ---
 
